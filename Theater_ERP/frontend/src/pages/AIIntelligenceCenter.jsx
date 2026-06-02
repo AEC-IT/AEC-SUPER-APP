@@ -6,11 +6,13 @@ import toast from 'react-hot-toast';
 export default function AIIntelligenceCenter() {
   const [activeTab, setActiveTab] = useState('daily'); // daily, monthly, yearly, archive, actions
   const token = localStorage.getItem('access_token');
+  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8002/api';
+  const queryClient = useQueryClient();
 
   const { data: reports, isLoading } = useQuery({
     queryKey: ['ai-reports-center', activeTab],
     queryFn: async () => {
-      let url = `http://localhost:8002/api/reports/ai/reports/`;
+      let url = `${API_BASE}/reports/ai/reports/`;
       if (activeTab === 'daily') url += `?period_type=DAILY`;
       else if (activeTab === 'monthly') url += `?period_type=MONTHLY`;
       else if (activeTab === 'yearly') url += `?period_type=YEARLY`;
@@ -26,7 +28,7 @@ export default function AIIntelligenceCenter() {
   const { data: actions, isLoading: actsLoading } = useQuery({
     queryKey: ['ai-actions'],
     queryFn: async () => {
-      const res = await axios.get(`http://localhost:8002/api/reports/ai/actions/`, {
+      const res = await axios.get(`${API_BASE}/reports/ai/actions/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return res.data;
@@ -36,10 +38,11 @@ export default function AIIntelligenceCenter() {
 
   const handleActionStatus = async (id, status) => {
     try {
-      await axios.patch(`http://localhost:8002/api/reports/ai/actions/${id}/`, { status }, {
+      await axios.patch(`${API_BASE}/reports/ai/actions/${id}/`, { status }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success(`Action marked as ${status}`);
+      queryClient.invalidateQueries(['ai-actions']);
     } catch (e) {
       toast.error('Failed to update action');
     }
