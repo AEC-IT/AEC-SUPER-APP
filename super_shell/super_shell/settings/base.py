@@ -86,26 +86,18 @@ DATABASE_URL = os.environ.get(
     'postgresql://neondb_owner:npg_TvBeNh3HO2GP@ep-twilight-dust-aoz4w2e2.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require'
 )
 
-if 'test' in sys.argv:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-else:
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=60,
-            conn_health_checks=True,
-        )
-    }
-    DATABASES['default'].setdefault('OPTIONS', {})
-    DATABASES['default']['OPTIONS'].update({
-        'sslmode': 'require',
-        'options': '-c default_transaction_isolation=serializable',
-    })
+DATABASES = {
+    'default': dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=60,
+        conn_health_checks=True,
+    )
+}
+DATABASES['default'].setdefault('OPTIONS', {})
+DATABASES['default']['OPTIONS'].update({
+    'sslmode': 'require',
+    'options': '-c default_transaction_isolation=serializable',
+})
 
 # Re-use Custom User model from Theater_ERP
 AUTH_USER_MODEL = 'accounts.User'
