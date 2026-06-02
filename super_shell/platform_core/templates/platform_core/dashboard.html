@@ -1,0 +1,546 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEC Super App | MD Command Center</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="{% static 'platform_core/css/dashboard.css' %}">
+</head>
+<body class="theme-obsidian">
+
+    <!-- Global App Loader -->
+    <div id="app-boot-loader" class="boot-loader-overlay">
+        <div class="loader-content">
+            <div class="loader-ring"></div>
+            <p class="loader-text">Loading MD Command Center...</p>
+        </div>
+    </div>
+
+    <!-- Login Container -->
+    <main id="login-container" class="login-view hidden">
+        <div class="login-bg-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+        </div>
+        
+        <div class="login-card">
+            <div class="login-header">
+                <span class="logo-accent">AEC</span>
+                <h1 class="login-title">Super App</h1>
+                <p class="login-subtitle">Managing Director Command Center</p>
+            </div>
+            
+            <form id="login-form" class="login-form">
+                <div class="form-group">
+                    <label for="login-email">Corporate Email</label>
+                    <input type="email" id="login-email" required placeholder="md@aeccinemas.com" autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password">
+                </div>
+                
+                <div id="login-error" class="login-error-msg hidden">
+                    <span class="error-icon">⚠️</span>
+                    <span id="login-error-text">Invalid login credentials. Please try again.</span>
+                </div>
+                
+                <button type="submit" id="login-submit" class="btn btn-primary btn-block">
+                    <span>Authenticate Securely</span>
+                    <div class="btn-spinner hidden"></div>
+                </button>
+            </form>
+            
+            <footer class="login-footer">
+                <p>Protected by AEC Multi-Tenant Security Shield</p>
+            </footer>
+        </div>
+    </main>
+
+    <!-- Main Dashboard Container -->
+    <div id="dashboard-container" class="dashboard-layout hidden">
+        
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-brand">
+                <div class="logo-circle">A</div>
+                <div class="brand-text-wrapper">
+                    <span class="brand-name">AEC SUPER APP</span>
+                    <span class="brand-badge">MD Core v1.0</span>
+                </div>
+                <button id="sidebar-toggle" class="sidebar-toggle-btn" aria-label="Toggle Sidebar">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" id="nav-dashboard">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" id="nav-modules">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    <span>Business Units</span>
+                </a>
+                <a href="#" class="nav-item" id="nav-alerts">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    <span>Alerts Feed</span>
+                    <span id="alerts-badge-count" class="badge-count hidden">0</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar Bottom Info -->
+            <div class="sidebar-footer">
+                <div class="user-profile-widget">
+                    <div class="profile-avatar" id="user-avatar-initials">MD</div>
+                    <div class="profile-info">
+                        <span class="profile-name" id="user-display-name">MD Executive</span>
+                        <span class="profile-role" id="user-display-role">Managing Director</span>
+                    </div>
+                </div>
+                <button id="logout-button" class="btn btn-outline btn-block btn-logout">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                    <span>Term Session</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Body Wrapper -->
+        <main class="main-body">
+            
+            <!-- Dashboard Top Header Bar -->
+            <header class="app-header">
+                <div class="header-welcome">
+                    <h2 class="header-title">Executive Command Center</h2>
+                    <div class="tenant-context-badge">
+                        <span class="pulse-indicator-green" title="Secure Context Active"></span>
+                        <span id="tenant-display-name">Loading tenant...</span>
+                        <span id="tenant-display-slug" class="tenant-slug"></span>
+                    </div>
+                </div>
+                
+                <div class="header-actions">
+                    <div class="health-summary-widget">
+                        <span class="health-status-text">Platform Status:</span>
+                        <span id="platform-health-badge" class="badge-status-normal">RESOLVING</span>
+                    </div>
+                    
+                    <button id="refresh-button" class="btn btn-refresh" aria-label="Refresh Dashboard">
+                        <svg id="refresh-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        <span>Refresh Sync</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Dynamic Scroll Area -->
+            <div class="content-scrollport">
+
+                <!-- Interactive Filters Bar -->
+                <div class="filter-toolbar card">
+                    <div class="filter-group">
+                        <label for="filter-bu">Business Unit:</label>
+                        <select id="filter-bu" class="filter-select">
+                            <option value="ALL">All Business Units</option>
+                            <option value="HR">Human Resources (HR)</option>
+                            <option value="THEATER">Theater ERP</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter-date-range">Date Range:</label>
+                        <select id="filter-date-range" class="filter-select">
+                            <option value="7D">Last 7 Days</option>
+                            <option value="30D">Last 30 Days</option>
+                            <option value="6M">Last 6 Months</option>
+                        </select>
+                    </div>
+                    <div class="sync-timestamp-wrapper">
+                        <span>Last Updated:</span>
+                        <span id="last-updated-timestamp" class="tabular-nums">-</span>
+                    </div>
+                </div>
+
+                <!-- 1. Top KPI Summaries Bar -->
+                <section class="kpi-grid" aria-label="Financial KPI metrics">
+                    <!-- KPI Card: Total Revenue -->
+                    <div class="card kpi-card card-hover-elevation clickable" id="kpi-card-revenue">
+                        <div class="kpi-icon-wrapper kpi-revenue">
+                            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        </div>
+                        <div class="kpi-data">
+                            <span class="kpi-label">AEC Total Revenue</span>
+                            <div class="kpi-value-container">
+                                <span class="kpi-currency">₹</span>
+                                <h3 class="kpi-value tabular-nums" id="kpi-revenue">0.00</h3>
+                            </div>
+                            <span class="kpi-subtext positive">▲ Month-to-date scale</span>
+                        </div>
+                    </div>
+
+                    <!-- KPI Card: Total Expense -->
+                    <div class="card kpi-card card-hover-elevation clickable" id="kpi-card-expense">
+                        <div class="kpi-icon-wrapper kpi-expense">
+                            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><path d="M2 17h20M2 12h20M2 7h20"/></svg>
+                        </div>
+                        <div class="kpi-data">
+                            <span class="kpi-label">Payroll & Expense Estimate</span>
+                            <div class="kpi-value-container">
+                                <span class="kpi-currency">₹</span>
+                                <h3 class="kpi-value tabular-nums" id="kpi-expense">0.00</h3>
+                            </div>
+                            <span class="kpi-subtext negative">▼ Combined operations</span>
+                        </div>
+                    </div>
+
+                    <!-- KPI Card: Net Profit/Loss -->
+                    <div class="card kpi-card card-hover-elevation clickable" id="kpi-card-profit">
+                        <div class="kpi-icon-wrapper kpi-profit">
+                            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>
+                        </div>
+                        <div class="kpi-data">
+                            <span class="kpi-label">Estimated Net Margin</span>
+                            <div class="kpi-value-container">
+                                <span class="kpi-currency">₹</span>
+                                <h3 class="kpi-value tabular-nums" id="kpi-profit">0.00</h3>
+                            </div>
+                            <span class="kpi-subtext positive" id="kpi-profit-ratio">▲ Calculated margin</span>
+                        </div>
+                    </div>
+
+                    <!-- KPI Card: Action Items & Approvals -->
+                    <div class="card kpi-card card-hover-elevation clickable" id="kpi-card-approvals">
+                        <div class="kpi-icon-wrapper kpi-alerts">
+                            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+                        </div>
+                        <div class="kpi-data">
+                            <span class="kpi-label">Pending MD Approvals</span>
+                            <h3 class="kpi-value tabular-nums" id="kpi-approvals">0</h3>
+                            <span class="kpi-subtext" id="kpi-approvals-subtext">Awaiting signature</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. Main Grid: Left (Business Units & Charts) | Right (Alerts & Launchers) -->
+                <div class="dashboard-grid">
+                    
+                    <!-- Left Column -->
+                    <div class="grid-column-left">
+                        
+                        <!-- Business Units Section -->
+                        <section class="section-container">
+                            <div class="section-header">
+                                <h3 class="section-title">AEC Business Units Overview</h3>
+                                <span class="section-subtitle">Real-time status & metrics across active modules</span>
+                            </div>
+
+                            <div class="bu-grid">
+                                <!-- HR App Card -->
+                                <div class="card bu-card card-hover-elevation clickable" id="bu-card-hr">
+                                    <div class="bu-card-header">
+                                        <div class="bu-badge hr-theme">HR</div>
+                                        <div class="bu-meta">
+                                            <h4 class="bu-name">Human Resources</h4>
+                                            <span class="bu-desc">aec_hr_superapp</span>
+                                        </div>
+                                        <span id="bu-status-hr" class="bu-status-tag status-resolving">RESOLVING</span>
+                                    </div>
+                                    <div class="bu-card-body">
+                                        <div class="bu-skeleton-loader">
+                                            <div class="skeleton-row"></div>
+                                            <div class="skeleton-row w-75"></div>
+                                        </div>
+                                        <div class="bu-metrics-list hidden" id="bu-metrics-hr">
+                                            <div class="bu-metric-row">
+                                                <span class="bu-metric-label">Active Headcount</span>
+                                                <span class="bu-metric-value tabular-nums" id="bu-val-hr-employees">-</span>
+                                            </div>
+                                            <div class="bu-metric-row">
+                                                <span class="bu-metric-label">Monthly Payroll</span>
+                                                <span class="bu-metric-value tabular-nums" id="bu-val-hr-payroll">-</span>
+                                            </div>
+                                            <div class="bu-metric-row">
+                                                <span class="bu-metric-label">On Leave Today</span>
+                                                <span class="bu-metric-value tabular-nums" id="bu-val-hr-leaves">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="bu-error-widget hidden" id="bu-error-hr">
+                                            <p class="error-msg">HR app connection failed. Downstream API is currently unreachable.</p>
+                                            <button class="btn btn-outline btn-sm btn-retry-bu" data-bu="HR">Retry Link</button>
+                                        </div>
+                                    </div>
+                                    <div class="bu-card-footer">
+                                        <button class="btn btn-outline btn-sm btn-launch-bu" data-module="HR">Open HR Portal</button>
+                                    </div>
+                                </div>
+
+                                <!-- Theater ERP Card -->
+                                <div class="card bu-card card-hover-elevation clickable" id="bu-card-theater">
+                                    <div class="bu-card-header">
+                                        <div class="bu-badge theater-theme">CINEMA</div>
+                                        <div class="bu-meta">
+                                            <h4 class="bu-name">Theater ERP</h4>
+                                            <span class="bu-desc">aec_cinemas</span>
+                                        </div>
+                                        <span id="bu-status-theater" class="bu-status-tag status-resolving">RESOLVING</span>
+                                    </div>
+                                    <div class="bu-card-body">
+                                        <div class="bu-skeleton-loader">
+                                            <div class="skeleton-row"></div>
+                                            <div class="skeleton-row w-75"></div>
+                                        </div>
+                                        <div class="bu-metrics-list hidden" id="bu-metrics-theater">
+                                            <div class="bu-metric-row">
+                                                <span class="bu-metric-label">Confirmed Bookings</span>
+                                                <span class="bu-metric-value tabular-nums" id="bu-val-theater-bookings">-</span>
+                                            </div>
+                                            <div class="bu-metric-row">
+                                                <span class="bu-metric-label">Box Office Sales</span>
+                                                <span class="bu-metric-value tabular-nums" id="bu-val-theater-revenue">-</span>
+                                            </div>
+                                            <div class="bu-metric-row">
+                                                <span class="bu-metric-label">Active PM Schedules</span>
+                                                <span class="bu-metric-value tabular-nums" id="bu-val-theater-pm">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="bu-error-widget hidden" id="bu-error-theater">
+                                            <p class="error-msg">Theater ERP connection failed. Downstream API is unreachable.</p>
+                                            <button class="btn btn-outline btn-sm btn-retry-bu" data-bu="THEATER">Retry Link</button>
+                                        </div>
+                                    </div>
+                                    <div class="bu-card-footer">
+                                        <button class="btn btn-outline btn-sm btn-launch-bu" data-module="THEATER">Open Cinema ERP</button>
+                                    </div>
+                                </div>
+
+                                <!-- Future Blocked BU: Enclave -->
+                                <div class="card bu-card bu-card-locked">
+                                    <div class="locked-icon-wrapper">
+                                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    </div>
+                                    <div class="bu-card-header">
+                                        <div class="bu-badge locked-theme">BU</div>
+                                        <div class="bu-meta">
+                                            <h4 class="bu-name">Enclave ERP</h4>
+                                            <span class="bu-desc">AEC Real Estate</span>
+                                        </div>
+                                    </div>
+                                    <div class="bu-card-body">
+                                        <p class="locked-text">Module integration planned for Phase 6.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Future Blocked BU: Residency -->
+                                <div class="card bu-card bu-card-locked">
+                                    <div class="locked-icon-wrapper">
+                                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    </div>
+                                    <div class="bu-card-header">
+                                        <div class="bu-badge locked-theme">BU</div>
+                                        <div class="bu-meta">
+                                            <h4 class="bu-name">Residency Portal</h4>
+                                            <span class="bu-desc">Property Management</span>
+                                        </div>
+                                    </div>
+                                    <div class="bu-card-body">
+                                        <p class="locked-text">Integration offline. Not initialized.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Future Blocked BU: Institute -->
+                                <div class="card bu-card bu-card-locked">
+                                    <div class="locked-icon-wrapper">
+                                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    </div>
+                                    <div class="bu-card-header">
+                                        <div class="bu-badge locked-theme">BU</div>
+                                        <div class="bu-meta">
+                                            <h4 class="bu-name">AEC Institute</h4>
+                                            <span class="bu-desc">Education Management</span>
+                                        </div>
+                                    </div>
+                                    <div class="bu-card-body">
+                                        <p class="locked-text">Tenant not licensed for Education modules.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Future Blocked BU: Travel -->
+                                <div class="card bu-card bu-card-locked">
+                                    <div class="locked-icon-wrapper">
+                                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    </div>
+                                    <div class="bu-card-header">
+                                        <div class="bu-badge locked-theme">BU</div>
+                                        <div class="bu-meta">
+                                            <h4 class="bu-name">Travel & Leisure</h4>
+                                            <span class="bu-desc">Hospitality Core</span>
+                                        </div>
+                                    </div>
+                                    <div class="bu-card-body">
+                                        <p class="locked-text">Future expansion slot.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Financial Trend Section -->
+                        <section class="section-container">
+                            <div class="section-header">
+                                <h3 class="section-title">AEC Corporate Financial Performance</h3>
+                                <div class="trend-tabs">
+                                    <button class="tab-btn active" id="chart-tab-daily">Daily Trend</button>
+                                    <button class="tab-btn" id="chart-tab-monthly">Monthly Summary</button>
+                                </div>
+                            </div>
+                            
+                            <div class="card chart-card clickable" id="chart-card-finance">
+                                <div class="chart-legend">
+                                    <div class="legend-item"><span class="legend-dot color-rev"></span><span>Revenue</span></div>
+                                    <div class="legend-item"><span class="legend-dot color-exp"></span><span>Operating Expenses</span></div>
+                                    <div class="legend-item"><span class="legend-dot color-prof"></span><span>Net Margin</span></div>
+                                </div>
+                                
+                                <div class="chart-viewport-container">
+                                    <div class="chart-y-axis">
+                                        <span class="y-label">₹500K</span>
+                                        <span class="y-label">₹250K</span>
+                                        <span class="y-label">0</span>
+                                    </div>
+                                    <div class="chart-content-wrapper">
+                                        <!-- SVG Compact Chart Canvas -->
+                                        <svg id="svg-financial-chart" viewBox="0 0 600 220" preserveAspectRatio="none" class="svg-chart-container">
+                                            <!-- Grid lines -->
+                                            <line x1="0" y1="20" x2="600" y2="20" class="chart-grid-line" />
+                                            <line x1="0" y1="110" x2="600" y2="110" class="chart-grid-line" />
+                                            <line x1="0" y1="200" x2="600" y2="200" class="chart-grid-line" />
+                                            
+                                            <!-- Dynamic paths will be injected by JavaScript -->
+                                            <g id="chart-dynamic-group"></g>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="chart-x-axis" id="chart-x-labels">
+                                    <!-- X-axis Labels injected by JS -->
+                                </div>
+                            </div>
+                        </section>
+
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="grid-column-right">
+                        
+                        <!-- Module Launcher Section -->
+                        <section class="section-container">
+                            <div class="section-header">
+                                <h3 class="section-title">MD Module Launcher</h3>
+                            </div>
+                            <div class="card module-launcher-card">
+                                <p class="launcher-intro">Quick launch authorized workspace suites:</p>
+                                <div class="launcher-grid" id="launcher-container">
+                                    <div class="launcher-skeleton">
+                                        <div class="skeleton-btn"></div>
+                                        <div class="skeleton-btn"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Alerts and Approvals Section -->
+                        <section class="section-container">
+                            <div class="section-header">
+                                <h3 class="section-title">Operations Alerts & Action Log</h3>
+                                <div class="alert-filters">
+                                    <button class="filter-chip active" data-filter="ALL">All</button>
+                                    <button class="filter-chip" data-filter="CRITICAL">Critical Only</button>
+                                </div>
+                            </div>
+
+                            <div class="alert-feed-wrapper">
+                                <div class="alert-skeleton" id="alerts-skeleton">
+                                    <div class="skeleton-item"></div>
+                                    <div class="skeleton-item"></div>
+                                    <div class="skeleton-item"></div>
+                                </div>
+                                
+                                <div id="alerts-feed" class="alert-feed hidden">
+                                    <!-- Dynamic rows injected by JS -->
+                                </div>
+                                
+                                <div id="alerts-empty-state" class="empty-state-widget hidden">
+                                    <div class="empty-icon">✓</div>
+                                    <p class="empty-title">All Systems Normal</p>
+                                    <p class="empty-desc">No critical alerts or pending leaves require your immediate attention.</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Operational Health Status Panel -->
+                        <section class="section-container">
+                            <div class="card health-panel-card">
+                                <h4 class="health-title">System Connectivity Index</h4>
+                                <div class="health-row">
+                                    <div class="health-label">
+                                        <span class="health-dot dot-active" id="health-dot-shell"></span>
+                                        <span>Super Shell Portal API</span>
+                                    </div>
+                                    <span class="health-latency">ONLINE</span>
+                                </div>
+                                <div class="health-row">
+                                    <div class="health-label">
+                                        <span class="health-dot" id="health-dot-hr"></span>
+                                        <span>HR Microservice Connection</span>
+                                    </div>
+                                    <span class="health-latency" id="health-latency-hr">-</span>
+                                </div>
+                                <div class="health-row">
+                                    <div class="health-label">
+                                        <span class="health-dot" id="health-dot-theater"></span>
+                                        <span>Theater ERP Connection</span>
+                                    </div>
+                                    <span class="health-latency" id="health-latency-theater">-</span>
+                                </div>
+                                <div class="health-sync-footer">
+                                    <span>Last Unified Sync:</span>
+                                    <span id="health-last-sync-time" class="tabular-nums">-</span>
+                                </div>
+                            </div>
+                        </section>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </main>
+
+    </div>
+
+    <!-- Alert Modal Dialog -->
+    <div id="action-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h4 class="modal-title" id="modal-title">Confirm Executive Decision</h4>
+                <button id="modal-close" class="modal-close-btn" aria-label="Close Modal">×</button>
+            </div>
+            <div class="modal-body" id="modal-body-content">
+                <!-- Injected content -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="modal-cancel">Cancel</button>
+                <button class="btn btn-primary" id="modal-confirm">Confirm Action</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core App JS Engine -->
+    <script src="{% static 'platform_core/js/dashboard.js' %}"></script>
+</body>
+</html>
