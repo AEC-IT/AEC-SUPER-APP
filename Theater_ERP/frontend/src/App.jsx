@@ -85,10 +85,10 @@ export default function App() {
               <Route path="advertising" element={<ProtectedRoute module="ADVERTISING"><AdvertisingPage /></ProtectedRoute>} />
               <Route path="finance" element={<ProtectedRoute roles={['MD', 'ADMIN']} module="FINANCE"><FinancePage /></ProtectedRoute>} />
               <Route path="staff" element={<ProtectedRoute roles={['MD', 'ADMIN']}><StaffReportPage /></ProtectedRoute>} />
-              <Route path="integrations/dcr" element={<ProtectedRoute roles={['MD', 'ADMIN']} module="DISTRICT_BRIDGE"><DCRPage /></ProtectedRoute>} />
+              <Route path="integrations/dcr" element={<ProtectedRoute roles={['MD', 'ADMIN', 'STAFF']} module="DISTRICT_BRIDGE"><DCRPage /></ProtectedRoute>} />
               <Route path="integrations/district-config" element={<ProtectedRoute roles={['MD', 'ADMIN']}><DistrictIntegrationPage /></ProtectedRoute>} />
-              <Route path="expenses" element={<ProtectedRoute roles={['MD', 'ADMIN']}><ExpensePage /></ProtectedRoute>} />
-              <Route path="inventory" element={<ProtectedRoute roles={['MD', 'ADMIN']}><InventoryPage /></ProtectedRoute>} />
+              <Route path="expenses" element={<ProtectedRoute roles={['MD', 'ADMIN', 'STAFF']}><ExpensePage /></ProtectedRoute>} />
+              <Route path="inventory" element={<ProtectedRoute roles={['MD', 'ADMIN', 'STAFF']}><InventoryPage /></ProtectedRoute>} />
               <Route path="cleaning" element={<CleaningPage />} />
               <Route path="parking" element={<ParkingPage />} />
               <Route path="reports" element={<ProtectedRoute roles={['MD', 'ADMIN']}><ReportsPage /></ProtectedRoute>} />
