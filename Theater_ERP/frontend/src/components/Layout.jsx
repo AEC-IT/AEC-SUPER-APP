@@ -22,9 +22,9 @@ const NAV_ITEMS = [
   ]},
   { section: 'Finance & HR', items: [
     { path: '/finance', icon: '🎭', label: 'Distributor Finance', roles: ['MD', 'ADMIN'], module: 'FINANCE' },
-    { path: '/expenses', icon: '💸', label: 'Expenses Outflows', roles: ['MD', 'ADMIN'] },
+    { path: '/expenses', icon: '💸', label: 'Expenses Outflows', roles: ['MD', 'ADMIN', 'STAFF'] },
     { path: '/integrations/district-config', icon: '⚙️', label: 'District Setup', roles: ['MD', 'ADMIN'], module: 'DISTRICT_BRIDGE' },
-    { path: '/integrations/dcr', icon: '📄', label: 'District DCR', roles: ['MD', 'ADMIN'], module: 'DISTRICT_BRIDGE' },
+    { path: '/integrations/dcr', icon: '📄', label: 'District DCR', roles: ['MD', 'ADMIN', 'STAFF'], module: 'DISTRICT_BRIDGE' },
     { path: '/staff', icon: '👥', label: 'Staff Report', roles: ['MD', 'ADMIN'], module: 'PAYROLL_MIRROR' },
   ]},
 
