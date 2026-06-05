@@ -13,16 +13,19 @@ class DCRValidator:
         Takes raw parsed data dict, computes expected values, creates DB models, 
         and flags discrepancies.
         """
+        from datetime import datetime
+        report_date = parsed_data.get('report_date') or datetime.now().date()
+        
         report = DistrictDCRReport.objects.create(
             tenant=tenant,
-            report_date=parsed_data['report_date'],
-            movie_title=parsed_data['movie_title'],
-            screen_name=parsed_data['screen_name'],
-            show_time=parsed_data['show_time'],
+            report_date=report_date,
+            movie_title=parsed_data.get('movie_title', 'Unknown Movie'),
+            screen_name=parsed_data.get('screen_name', 'Unknown Screen'),
+            show_time=parsed_data.get('show_time'),
             raw_pdf=pdf_file,
             parser_version='1.0',
-            confidence_score=parsed_data['confidence_score'],
-            raw_text_dump=parsed_data['raw_text'],
+            confidence_score=parsed_data.get('confidence_score', 0.0),
+            raw_text_dump=parsed_data.get('raw_text', ''),
             parsed_gross_revenue=parsed_data['gross_revenue'],
             parsed_occupancy=parsed_data.get('parsed_occupancy', Decimal('0')),
             parsed_gst=parsed_data['gst'],
