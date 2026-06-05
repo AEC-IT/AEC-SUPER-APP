@@ -175,17 +175,21 @@ class DCRValidator:
         else:
             language = 'Tamil'
 
-        movie, _ = Movie.objects.get_or_create(
+        movie = Movie.objects.filter(
             tenant=report.tenant,
-            title=movie_title,
-            defaults={
-                'language': language,
-                'duration_minutes': 150,
-                'certificate': 'U/A',
-                'is_active': True,
-                'release_date': report.report_date
-            }
-        )
+            title__iexact=movie_title
+        ).first()
+        
+        if not movie:
+            movie = Movie.objects.create(
+                tenant=report.tenant,
+                title=movie_title,
+                language=language,
+                duration_minutes=150,
+                certificate='U/A',
+                is_active=True,
+                release_date=report.report_date
+            )
 
         # 2. Find or create Screen
         screen = Screen.objects.filter(tenant=report.tenant, name__iexact=report.screen_name).first()
@@ -203,18 +207,24 @@ class DCRValidator:
         end_dt = start_dt + timedelta(minutes=movie.duration_minutes)
         end_time = end_dt.time()
 
-        show, _ = Show.objects.get_or_create(
+        show = Show.objects.filter(
             screen=screen,
             movie=movie,
             show_date=report.report_date,
-            start_time=show_time,
-            defaults={
-                'end_time': end_time,
-                'duration_hours': Decimal('2.50'),
-                'status': Show.Status.COMPLETED,
-                'base_price': Decimal('150.00')
-            }
-        )
+            start_time=show_time
+        ).first()
+        
+        if not show:
+            show = Show.objects.create(
+                screen=screen,
+                movie=movie,
+                show_date=report.report_date,
+                start_time=show_time,
+                end_time=end_time,
+                duration_hours=Decimal('2.50'),
+                status=Show.Status.COMPLETED,
+                base_price=Decimal('150.00')
+            )
 
         # 4. Clean previous synced bookings for this show
         Booking.objects.filter(show=show, notes="DCR Sync").delete()

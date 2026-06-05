@@ -16,7 +16,7 @@ def custom_exception_handler(exc, context):
     if response is None:
         logger.error(f"Unhandled exception in {context.get('view')}: {exc}", exc_info=True)
         return Response(
-            {'error': 'An unexpected server error occurred. Please contact your administrator.',
+            {'error': f"Server Error: {str(exc)}",
              'detail': str(exc)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
