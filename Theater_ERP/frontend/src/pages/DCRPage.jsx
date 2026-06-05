@@ -1990,6 +1990,7 @@ export default function DCRPage() {
                   ))}
                 </ul>
               </div>
+            )}
             <form onSubmit={handleSaveReview}>
               <div className="form-group">
                 <label className="form-label">Variance Remarks</label>
