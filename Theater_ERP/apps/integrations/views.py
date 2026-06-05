@@ -46,11 +46,11 @@ class DistrictDCRReportViewSet(viewsets.ModelViewSet):
             
             share_pct_str = request.data.get('share_percentage')
             if not share_pct_str:
-                share_pct_str = '50.0'
+                share_pct_str = '0.0'
             try:
                 share_percentage = Decimal(share_pct_str)
             except Exception:
-                share_percentage = Decimal('50.0')
+                share_percentage = Decimal('0.0')
             
             report = DCRValidator.validate_and_save(
                 tenant=tenant,

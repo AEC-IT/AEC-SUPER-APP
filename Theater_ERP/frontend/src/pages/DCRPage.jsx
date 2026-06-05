@@ -294,7 +294,7 @@ export default function DCRPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [showReview, setShowReview] = useState(false);
   const [reviewerNote, setReviewerNote] = useState('');
-  const [form, setForm] = useState({ file: null, sharePct: '50.0' });
+  const [form, setForm] = useState({ file: null, sharePct: '0' });
 
   // Fetch DCR list from backend
   const { data: dcrData, isLoading } = useQuery({
@@ -314,7 +314,7 @@ export default function DCRPage() {
       queryClient.invalidateQueries({ queryKey: ['dcrs'] });
       toast.success('DCR PDF uploaded and parser confidence evaluated.');
       setShowUpload(false);
-      setForm({ file: null, sharePct: '50.0' });
+      setForm({ file: null, sharePct: '0' });
       if (res.data?.id) {
         setSelectedReportIdForModal(res.data.id);
         setModalActiveTab('report');
@@ -1159,7 +1159,6 @@ export default function DCRPage() {
                         <th>Gross (₹)</th>
                         <th>Nett (₹)</th>
                         <th>Status</th>
-                        <th>Mismatch</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -1188,13 +1187,6 @@ export default function DCRPage() {
                               }`}>
                                 {d.status.replace('_', ' ')}
                               </span>
-                            </td>
-                            <td>
-                              {d.mismatch_flag ? (
-                                <span className="badge badge-error">⚠️ Mismatch</span>
-                              ) : (
-                                <span className="badge badge-success">OK</span>
-                              )}
                             </td>
                             <td>
                               <button
@@ -1967,8 +1959,8 @@ export default function DCRPage() {
                 <input type="file" className="form-input" onChange={e => setForm({...form, file: e.target.files[0]})} required />
               </div>
               <div className="form-group">
-                <label className="form-label">Exhibitor Split (Share %)</label>
-                <input type="number" className="form-input" value={form.sharePct} onChange={e => setForm({...form, sharePct: e.target.value})} required />
+                <label className="form-label">Exhibitor Split (Share %) (Optional)</label>
+                <input type="number" className="form-input" value={form.sharePct} onChange={e => setForm({...form, sharePct: e.target.value})} />
               </div>
               <div className="flex gap-12" style={{ justifyContent: 'flex-end', marginTop: '16px' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowUpload(false)}>Cancel</button>
@@ -1998,8 +1990,6 @@ export default function DCRPage() {
                   ))}
                 </ul>
               </div>
-            )}
-            
             <form onSubmit={handleSaveReview}>
               <div className="form-group">
                 <label className="form-label">Variance Remarks</label>
