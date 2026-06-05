@@ -61,7 +61,7 @@ class DistrictDCRReportViewSet(viewsets.ModelViewSet):
             )
             
             # If mismatch found, trigger alert inside global Alert Center
-            if report.mismatch_flag:
+            if report.mismatch_flag and report.tenant:
                 from apps.operations.models import OperationalAlert
                 OperationalAlert.objects.create(
                     tenant=report.tenant,
