@@ -31,11 +31,17 @@ class DistrictDCRReportViewSet(viewsets.ModelViewSet):
         pdf_file = request.FILES['file']
         file_ext = os.path.splitext(pdf_file.name)[1].lower()
         
+        # Reset file pointer in case it was read by middleware
+        pdf_file.seek(0)
+        
         # Save to temp file for parser
         with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as tmp:
             for chunk in pdf_file.chunks():
                 tmp.write(chunk)
             tmp_path = tmp.name
+            
+        # Reset again for Django FileField to save correctly
+        pdf_file.seek(0)
 
         try:
             # Parse
@@ -91,6 +97,7 @@ class DistrictDCRReportViewSet(viewsets.ModelViewSet):
 
         # Save raw_pdf to temp file
         file_ext = os.path.splitext(report.raw_pdf.name)[1].lower()
+        report.raw_pdf.seek(0)
         with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as tmp:
             for chunk in report.raw_pdf.chunks():
                 tmp.write(chunk)
