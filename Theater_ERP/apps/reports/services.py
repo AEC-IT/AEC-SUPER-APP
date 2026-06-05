@@ -122,6 +122,8 @@ class PLReportEngine:
             cess=Sum('parsed_cess'),
             repbeta=Sum('parsed_repbeta'),
             kfc=Sum('parsed_kfc'),
+            gross=Sum('parsed_gross_revenue'),
+            dist_share=Sum('parsed_distributor_share'),
         )
         dcr_gst      = dcr_agg['gst']      or Decimal('0')
         dcr_etax     = dcr_agg['etax']     or Decimal('0')
@@ -129,8 +131,20 @@ class PLReportEngine:
         dcr_repbeta  = dcr_agg['repbeta']  or Decimal('0')
         dcr_kfc      = dcr_agg['kfc']      or Decimal('0')
         dcr_levies_total = dcr_gst + dcr_etax + dcr_cess + dcr_repbeta + dcr_kfc
+        
+        # Add DCR revenues and expenses to overall totals
+        ticket_revenue += (dcr_agg['gross'] or Decimal('0'))
+        distributor_cost += (dcr_agg['dist_share'] or Decimal('0'))
+        
+        # Add DCR tickets sold
+        from apps.integrations.models import DCRTicketClass
+        dcr_tickets_qs = DCRTicketClass.objects.filter(report__report_date=report_date)
+        if tenant: dcr_tickets_qs = dcr_tickets_qs.filter(report__tenant=tenant)
+        tickets_sold += (dcr_tickets_qs.aggregate(total=Sum('ticket_count'))['total'] or 0)
 
         total_expenses = elec_charges + diesel_cost + distributor_cost + daily_payroll + cafe_expense + general_expenses_total + dcr_levies_total
+        total_income = ticket_revenue + canteen_revenue + ad_revenue
+
 
         net = total_income - total_expenses
 
@@ -315,6 +329,8 @@ class PLReportEngine:
             cess=Sum('parsed_cess'),
             repbeta=Sum('parsed_repbeta'),
             kfc=Sum('parsed_kfc'),
+            gross=Sum('parsed_gross_revenue'),
+            dist_share=Sum('parsed_distributor_share'),
         )
         dcr_gst      = dcr_agg['gst']      or Decimal('0')
         dcr_etax     = dcr_agg['etax']     or Decimal('0')
@@ -323,7 +339,12 @@ class PLReportEngine:
         dcr_kfc      = dcr_agg['kfc']      or Decimal('0')
         dcr_levies_total = dcr_gst + dcr_etax + dcr_cess + dcr_repbeta + dcr_kfc
 
+        # Add DCR revenues and expenses to overall totals
+        ticket_revenue += (dcr_agg['gross'] or Decimal('0'))
+        distributor_cost += (dcr_agg['dist_share'] or Decimal('0'))
+
         total_expenses = elec_charges + diesel_cost + distributor_cost + film_advances + payroll + cafe_expense + general_expenses_total + dcr_levies_total
+        total_income = ticket_revenue + canteen_revenue + ad_revenue
         net = total_income - total_expenses
 
         # Day-by-day breakdown
