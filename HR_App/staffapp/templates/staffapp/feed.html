@@ -1,0 +1,38 @@
+{% extends 'staffapp/base.html' %}
+{% block title %}Feed{% endblock %}
+{% block content %}
+{% include 'staffapp/_header.html' with title='Feed' icon='📰' %}
+{% if bdays %}
+<section class="px-3 mb-4">
+  <h2 class="text-sm text-white/60 mb-2 px-1">🎂 Birthdays this week</h2>
+  <div class="flex gap-3 overflow-x-auto pb-1">
+    {% for b in bdays %}
+    <div class="card px-4 py-3 min-w-[140px] {% if b.today %}ring-2 ring-brand{% endif %}">
+      <div class="font-medium truncate">{{ b.p.user.get_full_name|default:b.p.user.username }}</div>
+      <div class="text-xs text-white/50">{% if b.today %}Today 🎉{% else %}{{ b.date|date:"D, d M" }}{% endif %}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+<div class="space-y-3 px-3">
+  {% for n in items %}
+  <article class="card p-4 {% if not n.is_read %}border-l-4 border-brand{% endif %}">
+    <div class="flex items-center justify-between text-xs text-white/50">
+      <span>{% if n.notification_type == 'BIRTHDAY_WISH' %}🎂 Birthday{% elif n.notification_type == 'ANNIVERSARY_WISH' %}💍 Anniversary{% elif n.notification_type == 'ONBOARDING_WISH' %}👋 New joiner{% elif n.notification_type == 'PROMOTION_WISH' %}🚀 Promotion{% elif n.notification_type == 'PERSONAL' %}🔔 For you{% elif n.notification_type == 'LATE_WARNING' %}⚠️ Attendance{% else %}📢 Announcement{% endif %}</span>
+      <span>{{ n.created_at|timesince }} ago</span>
+    </div>
+    <h3 class="font-semibold mt-2">{{ n.title }}</h3>
+    <p class="text-sm text-white/70 mt-1 whitespace-pre-line">{{ n.message }}</p>
+    <div class="flex items-center gap-2 mt-3">
+      {% if n.notification_type in 'BIRTHDAY_WISH ANNIVERSARY_WISH ONBOARDING_WISH PROMOTION_WISH' and n.target_profile_id != me.id %}
+      <form method="post" action="{% url 'notifications:send_wish' n.pk %}" class="flex-1 flex gap-2">{% csrf_token %}<input type="hidden" name="next" value="/app/feed/">
+        <input name="wish_text" required placeholder="Send a wish…" class="field !py-2 text-sm">
+        <button class="bg-brand rounded-xl px-4 text-sm">Send</button>
+      </form>
+      {% endif %}
+    </div>
+  </article>
+  {% empty %}<p class="text-white/50 text-center py-24">No Data Found</p>{% endfor %}
+</div>
+{% endblock %}

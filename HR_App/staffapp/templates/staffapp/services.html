@@ -1,0 +1,17 @@
+{% extends 'staffapp/base.html' %}
+{% block title %}Services{% endblock %}
+{% block content %}
+{% include 'staffapp/_header.html' with title='Services' icon='🧩' %}
+<div class="grid grid-cols-3 gap-3 px-3">
+  {% url 'staffapp:leaves' as u1 %}{% url 'staffapp:schedule' as u2 %}{% url 'staffapp:tasks' as u3 %}
+  {% url 'workforce:performance' as u4 %}{% url 'reimbursements' as u5 %}{% url 'payroll:dashboard' as u6 %}
+  <a href="{{ u1 }}" class="card aspect-square flex flex-col items-center justify-center gap-2 text-sm text-center"><span class="text-3xl">🗓️</span>View<br>Leaves</a>
+  <a href="{% url 'staffapp:leave_new' %}" class="card aspect-square flex flex-col items-center justify-center gap-2 text-sm text-center"><span class="text-3xl">📝</span>Apply<br>Leave</a>
+  <a href="{{ u2 }}" class="card aspect-square flex flex-col items-center justify-center gap-2 text-sm text-center"><span class="text-3xl">📆</span>My<br>Schedule</a>
+  <a href="{{ u3 }}" class="card aspect-square flex flex-col items-center justify-center gap-2 text-sm text-center"><span class="text-3xl">✅</span>Task</a>
+  <a href="{{ u5 }}" class="card aspect-square flex flex-col items-center justify-center gap-2 text-sm text-center"><span class="text-3xl">🧾</span>My<br>Request</a>
+  <a href="{{ u6 }}" class="card aspect-square flex flex-col items-center justify-center gap-2 text-sm text-center"><span class="text-3xl">💰</span>Payslip</a>
+  <a href="{{ u4 }}" class="card aspect-square flex flex-col items-center justify-center gap-2 text-sm text-center"><span class="text-3xl">📈</span>Appraisal</a>
+  <a href="{% url 'leave:holidays' %}" class="card aspect-square flex flex-col items-center justify-center gap-2 text-sm text-center"><span class="text-3xl">🎉</span>Holidays</a>
+</div>
+{% endblock %}

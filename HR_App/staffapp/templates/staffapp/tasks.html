@@ -1,0 +1,54 @@
+{% extends 'staffapp/base.html' %}
+{% block content %}
+{% url 'staffapp:home' as back %}{% include 'staffapp/_header.html' with back=back title='Task' icon='✅' %}
+<div class="px-3" x-data="{ open: {{ open_new|yesno:'true,false' }} }">
+  <div class="card p-1.5 grid grid-cols-2 text-sm">
+    <a href="?v=mine" class="text-center py-2.5 rounded-xl {% if view == 'mine' %}bg-card2{% else %}text-white/50{% endif %}">My Tasks <span class="bg-brand text-[10px] rounded px-1.5">{{ mine_count }}</span></a>
+    <a href="?v=created" class="text-center py-2.5 rounded-xl {% if view == 'created' %}bg-card2{% else %}text-white/50{% endif %}">Created by me <span class="bg-white/20 text-[10px] rounded px-1.5">{{ created_count }}</span></a>
+  </div>
+  <div class="grid grid-cols-2 gap-3 mt-3">
+    <div class="rounded-2xl p-4 bg-[#5a4128]"><div class="text-xs">🟡 Due Today</div><div class="text-2xl font-bold mt-2">{{ stats.due }}</div></div>
+    <div class="rounded-2xl p-4 bg-[#6b1f1f]"><div class="text-xs">🔴 Overdue</div><div class="text-2xl font-bold mt-2">{{ stats.overdue }}</div></div>
+    <div class="rounded-2xl p-4 bg-[#1e2f5c]"><div class="text-xs">🔵 Open</div><div class="text-2xl font-bold mt-2">{{ stats.open }}</div></div>
+    <div class="rounded-2xl p-4 bg-[#1d4a2e]"><div class="text-xs">🟢 Completed</div><div class="text-2xl font-bold mt-2">{{ stats.done }}</div></div>
+  </div>
+
+  <div class="space-y-3 mt-4">
+    {% for t in items %}
+    <div class="card p-4">
+      <div class="flex justify-between gap-2"><span class="font-medium {% if t.status == 'COMPLETED' %}line-through text-white/40{% endif %}">{{ t.title }}</span>
+        {% if t.due_date %}<span class="text-xs whitespace-nowrap {% if t.due_date < today and t.status != 'COMPLETED' %}text-red-400{% else %}text-white/50{% endif %}">{{ t.due_date|date:"d M" }}</span>{% endif %}</div>
+      {% if t.description %}<p class="text-sm text-white/60 mt-1">{{ t.description }}</p>{% endif %}
+      <div class="text-xs text-white/40 mt-2">{% if view == 'mine' %}From {{ t.assigned_by.get_full_name|default:t.assigned_by.username }}{% else %}To {{ t.assigned_to.user.get_full_name }}{% endif %}</div>
+      {% if view == 'mine' %}
+      <form method="post" class="flex gap-2 mt-3">{% csrf_token %}<input type="hidden" name="action" value="status"><input type="hidden" name="pk" value="{{ t.pk }}">
+        {% for v, l in t.Status.choices %}<button name="status" value="{{ v }}" class="text-xs px-3 py-1.5 rounded-full {% if t.status == v %}bg-brand{% else %}bg-card2 text-white/60{% endif %}">{{ l }}</button>{% endfor %}
+      </form>
+      {% endif %}
+    </div>
+    {% empty %}<p class="text-white/50 text-center py-10">No tasks</p>{% endfor %}
+  </div>
+
+  <button @click="open = true" class="fixed bottom-24 right-4 w-14 h-14 rounded-full bg-brand text-3xl shadow-lg">+</button>
+
+  <div x-show="open" x-cloak class="fixed inset-0 z-50 bg-black">
+    <form method="post" class="max-w-md mx-auto p-4 space-y-4 h-full flex flex-col">{% csrf_token %}
+      <div class="flex items-center justify-between h-12"><span></span><h2 class="font-semibold text-lg">✅ Create Task</h2>
+        <button type="button" @click="open = false" class="w-10 h-10 rounded-xl bg-card">✕</button></div>
+      <label class="block card p-4"><span class="text-sm text-white/60">Task Name <span class="text-red-400">*</span></span>
+        <input name="title" required placeholder="Write a task name" class="w-full bg-transparent mt-1 outline-none placeholder-white/30"></label>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="text-sm text-white/60">Assignee</span>
+          <select name="assignee" class="field mt-1"><option value="">Myself</option>
+            {% for c in colleagues %}<option value="{{ c.id }}">{{ c.user.get_full_name|default:c.user.username }}</option>{% endfor %}</select></label>
+        <label class="block"><span class="text-sm text-white/60">Due date</span><input type="date" name="due_date" class="field mt-1"></label>
+      </div>
+      <label class="block card p-4"><span class="text-sm text-white/60">Description</span>
+        <textarea name="description" rows="3" placeholder="Write description" class="w-full bg-transparent mt-1 outline-none placeholder-white/30"></textarea></label>
+      <div class="flex-1"></div>
+      <button class="btn">Create Task</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script><style>[x-cloak]{display:none!important}</style>{% endblock %}

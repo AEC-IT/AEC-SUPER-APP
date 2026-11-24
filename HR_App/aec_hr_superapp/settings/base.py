@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'communications',
     'notifications',
     'workforce',
+    'staffapp',
 ]
 
 MIGRATION_MODULES = {

@@ -215,3 +215,28 @@ class PerformanceReview(models.Model):
         self.stage = self.Stage.DONE
         self.completed_at = timezone.now()
         self.save()
+
+
+# ---------------------------------------------------------------------------
+# Breaks during a working day
+# ---------------------------------------------------------------------------
+class AttendanceBreak(models.Model):
+    attendance = models.ForeignKey('core.Attendance', on_delete=models.CASCADE, related_name='breaks')
+    start = models.DateTimeField()
+    end = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['start']
+
+    @property
+    def seconds(self):
+        return int(((self.end or timezone.now()) - self.start).total_seconds())
+
+
+def worked_seconds(att):
+    """Seconds worked so far (or in total), excluding breaks."""
+    if not att or not att.in_time:
+        return 0
+    total = ((att.out_time or timezone.now()) - att.in_time).total_seconds()
+    total -= sum(b.seconds for b in att.breaks.all())
+    return max(0, int(total))

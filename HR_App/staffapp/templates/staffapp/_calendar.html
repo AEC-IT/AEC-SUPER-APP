@@ -1,0 +1,19 @@
+<div class="grid grid-cols-7 text-center text-xs text-white/50 mb-2">{% for d in "SMTWTFS" %}<div>{{ d }}</div>{% endfor %}</div>
+{% for week in weeks %}
+<div class="grid grid-cols-7 gap-y-2 mb-2 place-items-center">
+  {% for c in week %}
+  <div class="relative w-9 h-9 rounded-full flex items-center justify-center text-sm
+    {% if not c.in_month %}text-white/25
+    {% elif c.status == 'P' %}bg-brand
+    {% elif c.status == 'L' %}bg-emerald-600
+    {% elif c.status == 'H' %}bg-amber-500/80
+    {% elif c.status == 'OFF' %}bg-white/15
+    {% elif c.status == 'UL' %}border border-red-400/80
+    {% endif %}" title="{{ c.status }}">
+    {{ c.date.day }}
+    {% if c.late and c.in_month %}<i class="absolute top-0 right-0 w-2 h-2 rounded-full bg-orange-400"></i>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}
+<p class="text-[11px] text-white/40 mt-1">🟠 dot = late check-in</p>

@@ -1,0 +1,19 @@
+{% extends 'staffapp/base.html' %}
+{% block content %}
+{% url 'staffapp:home' as back %}{% include 'staffapp/_header.html' with back=back title='Leave Request' icon='🗓️' %}
+<form method="post" class="px-3 space-y-3">{% csrf_token %}
+  <label class="block card p-4"><span class="text-sm text-white/60">Leave Type *</span>
+    <select name="leave_type" required class="w-full bg-transparent mt-1 text-lg outline-none">
+      <option value="" class="bg-black">Select leave type</option>
+      {% for v, l in types %}<option value="{{ v }}" class="bg-black">{{ l }}</option>{% endfor %}
+    </select></label>
+  <div class="card p-4"><span class="text-sm text-white/60">Select Dates *</span>
+    <div class="grid grid-cols-2 gap-3 mt-2">
+      <input type="date" name="start_date" required class="field" onchange="this.form.end_date.min=this.value; if(!this.form.end_date.value) this.form.end_date.value=this.value">
+      <input type="date" name="end_date" required class="field"></div></div>
+  <label class="block card p-4"><span class="text-sm text-white/60">Leave Reason *</span>
+    <textarea name="reason" required rows="3" placeholder="Type reason…" class="w-full bg-transparent mt-1 outline-none placeholder-white/30"></textarea></label>
+  <p class="text-xs text-white/40 px-1">Probation: 1 leave / month · Permanent: 2 leaves / month</p>
+  <div class="fixed bottom-20 inset-x-0 px-4 max-w-md mx-auto"><button class="btn">Submit Request</button></div>
+</form>
+{% endblock %}

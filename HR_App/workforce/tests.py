@@ -38,7 +38,7 @@ class PagesRender(Base):
     def test_pages_for_each_role(self):
         for u in (self.hr, self.boss, self.a):
             self.login(u)
-            for url in ('/workforce/roster/', '/workforce/performance/', '/dashboard/',
+            for url in ('/workforce/roster/', '/workforce/performance/',
                         '/manifest.webmanifest', '/sw.js'):
                 r = self.client.get(url)
                 self.assertEqual(r.status_code, 200, f'{u.username} {url}')

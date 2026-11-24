@@ -15,6 +15,9 @@ from core.views import setup_owner, signup, reimbursements_view, tasks_view
 def dashboard(request):
     ctx = {}
     u = request.user
+    # Staff get the phone-style employee app; ?admin=1 is not offered to staff.
+    if getattr(u, 'role', None) == 'STAFF' and not u.is_superuser:
+        return redirect('staffapp:home')
     from core.models import EmployeeProfile, Department, Attendance, LeaveRequest
     from django.utils import timezone
     from django.db.models import F
@@ -169,6 +172,7 @@ urlpatterns = [
     path('communications/', include('communications.urls')),
     path('notifications/', include('notifications.urls')),
     path('workforce/', include('workforce.urls')),
+    path('app/', include('staffapp.urls')),
 
     # PWA: manifest + service worker must be served from the site root (scope '/')
     path('manifest.webmanifest', TemplateView.as_view(template_name='pwa/manifest.webmanifest',

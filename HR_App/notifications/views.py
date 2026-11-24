@@ -104,7 +104,8 @@ class SendStaffWishView(LoginRequiredMixin, View):
         wish_text = request.POST.get('wish_text', '').strip()
         if not wish_text:
             messages.error(request, "Wish message cannot be empty.")
-            return redirect('notifications:list')
+            nxt = request.POST.get('next', '')
+        return redirect(nxt if nxt.startswith('/app/') else 'notifications:list')
             
         if notif.target_profile:
             from communications.models import InternalMail
@@ -119,7 +120,8 @@ class SendStaffWishView(LoginRequiredMixin, View):
         else:
             messages.error(request, "Could not find recipient profile.")
             
-        return redirect('notifications:list')
+        nxt = request.POST.get('next', '')
+        return redirect(nxt if nxt.startswith('/app/') else 'notifications:list')
 
 
 # ---------------------------------------------------------------------------

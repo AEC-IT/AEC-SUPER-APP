@@ -1,0 +1,89 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en" class="bg-black">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>{% block title %}AEC HR{% endblock %}</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="{% static 'pwa/icon-192.png' %}">
+  <style type="text/tailwindcss">
+    @theme {
+      --color-brand: #6d4aff;
+      --color-brand-dark: #4c2fd6;
+      --color-card: #1c1c22;
+      --color-card2: #26262e;
+    }
+    body { -webkit-tap-highlight-color: transparent; }
+    .card { @apply bg-card rounded-2xl; }
+    .field { @apply w-full bg-card2 rounded-xl px-4 py-3 text-white placeholder-white/30 outline-none focus:ring-2 focus:ring-brand; }
+    .btn { @apply w-full py-4 rounded-full bg-brand text-white font-semibold active:scale-[.98] transition; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body class="bg-black text-white min-h-screen antialiased">
+  <div class="max-w-md mx-auto min-h-screen relative pb-24" style="padding-top: env(safe-area-inset-top)">
+    {% if messages %}
+    <div class="fixed top-3 inset-x-3 z-50 max-w-md mx-auto space-y-2" x-data>
+      {% for m in messages %}
+      <div class="rounded-xl px-4 py-3 text-sm {% if m.tags == 'error' %}bg-red-600{% else %}bg-emerald-600{% endif %}"
+           onclick="this.remove()">{{ m }}</div>
+      {% endfor %}
+    </div>
+    <script>setTimeout(() => document.querySelectorAll('.fixed.top-3 > div').forEach(e => e.remove()), 3500)</script>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </div>
+
+  <!-- Bottom tabs -->
+  <nav class="fixed bottom-0 inset-x-0 z-40 bg-[#111114] border-t border-white/5" style="padding-bottom: env(safe-area-inset-bottom)">
+    <div class="max-w-md mx-auto grid grid-cols-5 text-[11px]">
+      {% with t=tab %}
+      <a href="{% url 'staffapp:home' %}" class="flex flex-col items-center py-2.5 gap-1 {% if t == 'home' %}text-white{% else %}text-white/40{% endif %}">
+        <svg class="w-6 h-6" fill="{% if t == 'home' %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><path stroke-linejoin="round" d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5Z"/></svg>Home</a>
+      <a href="{% url 'staffapp:attendance' %}" class="flex flex-col items-center py-2.5 gap-1 {% if t == 'attendance' %}text-white{% else %}text-white/40{% endif %}">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/><circle cx="15.5" cy="16" r="2.5"/></svg>Attendance</a>
+      <a href="{% url 'staffapp:feed' %}" class="flex flex-col items-center py-2.5 gap-1 {% if t == 'feed' %}text-white{% else %}text-white/40{% endif %}">
+        <svg class="w-6 h-6" fill="{% if t == 'feed' %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="12" rx="2"/><path d="M5 6h14M7 3h10"/></svg>Feed</a>
+      <a href="{% url 'staffapp:services' %}" class="flex flex-col items-center py-2.5 gap-1 {% if t == 'services' %}text-white{% else %}text-white/40{% endif %}">
+        <svg class="w-6 h-6" fill="{% if t == 'services' %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>Services</a>
+      <a href="{% url 'staffapp:profile' %}" class="flex flex-col items-center py-2.5 gap-1 {% if t == 'profile' %}text-white{% else %}text-white/40{% endif %}">
+        <svg class="w-6 h-6" fill="{% if t == 'profile' %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>Profile</a>
+      {% endwith %}
+    </div>
+  </nav>
+
+  <script>
+  // Service worker + push opt-in (same as admin view)
+  (function () {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(async (reg) => {
+      if (!('PushManager' in window)) return;
+      const { key } = await (await fetch('{% url "notifications:push_key" %}')).json();
+      if (!key) return;
+      const csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+      const save = (sub) => fetch('{% url "notifications:push_subscribe" %}', { method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf }, body: JSON.stringify(sub.toJSON()) });
+      const existing = await reg.pushManager.getSubscription();
+      if (existing && Notification.permission === 'granted') return save(existing);
+      const btn = document.getElementById('push-enable');
+      if (!btn || Notification.permission === 'denied') return;
+      btn.hidden = false;
+      btn.onclick = async () => {
+        if (await Notification.requestPermission() !== 'granted') { btn.hidden = true; return; }
+        const b64 = key.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - key.length % 4) % 4);
+        const sub = await reg.pushManager.subscribe({ userVisibleOnly: true,
+          applicationServerKey: Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)) });
+        await save(sub); btn.hidden = true;
+      };
+    }).catch(() => {});
+  })();
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,1 @@
+{% if me.user.profile_picture %}<img src="{{ me.user.profile_picture.url }}" alt="" class="{{ size }} rounded-full object-cover bg-white/20 shrink-0">{% else %}<div class="{{ size }} rounded-full bg-white/20 flex items-center justify-center font-bold text-lg uppercase shrink-0">{{ me.user.first_name|default:me.user.username|first }}</div>{% endif %}

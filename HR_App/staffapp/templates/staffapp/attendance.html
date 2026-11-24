@@ -1,0 +1,41 @@
+{% extends 'staffapp/base.html' %}
+{% block title %}Attendance{% endblock %}
+{% block content %}
+{% include 'staffapp/_header.html' with title='Attendance' icon='🗓️' %}
+<div class="flex items-end gap-5 px-4 pb-3 overflow-x-auto">
+  {% for m in months %}<a href="?m={{ m|date:'Y-n' }}" class="{% if forloop.last %}text-white font-semibold text-base{% else %}text-white/40 text-sm{% endif %} whitespace-nowrap">{{ m|date:"M Y" }}</a>{% endfor %}
+</div>
+
+<section class="card mx-3 p-4" x-data>
+  <div class="flex justify-between items-center"><h2 class="font-semibold text-lg">Summary</h2>
+    <span class="bg-card2 rounded-full px-3 py-1 text-sm">{{ rows|length }} Days</span></div>
+  <div class="flex h-3 rounded-full overflow-hidden my-4 bg-card2">
+    {% for k, pct in bar %}<div style="width: {{ pct }}%" class="{% if k == 'P' %}bg-emerald-500{% elif k == 'L' %}bg-sky-500{% elif k == 'OFF' %}bg-white/40{% elif k == 'H' %}bg-amber-500{% else %}bg-red-600{% endif %}"></div>{% endfor %}
+  </div>
+  <div class="flex flex-wrap gap-2 text-sm">
+    <span class="bg-card2 rounded-lg px-3 py-1.5"><i class="inline-block w-2 h-2 rounded-full bg-emerald-500"></i> Present {{ counts.P }}</span>
+    <span class="bg-card2 rounded-lg px-3 py-1.5"><i class="inline-block w-2 h-2 rounded-full bg-orange-400"></i> Late {{ counts.late }}</span>
+    <span class="bg-card2 rounded-lg px-3 py-1.5"><i class="inline-block w-2 h-2 rounded-full bg-white/40"></i> Off Day {{ counts.OFF }}</span>
+    <span class="bg-card2 rounded-lg px-3 py-1.5"><i class="inline-block w-2 h-2 rounded-full bg-sky-500"></i> Leave {{ counts.L }}</span>
+    <span class="bg-card2 rounded-lg px-3 py-1.5"><i class="inline-block w-2 h-2 rounded-full bg-red-600"></i> Absent {{ counts.UL }}</span>
+    {% if counts.H %}<span class="bg-card2 rounded-lg px-3 py-1.5"><i class="inline-block w-2 h-2 rounded-full bg-amber-500"></i> Holiday {{ counts.H }}</span>{% endif %}
+  </div>
+</section>
+
+<h2 class="font-semibold text-lg px-4 mt-6 mb-3">Daily Activity</h2>
+<div class="space-y-3 px-3">
+  {% for r in rows %}
+  <div class="card p-4">
+    <div class="flex items-center justify-between text-sm">
+      <span class="font-medium {% if r.status == 'P' %}text-emerald-400{% elif r.status == 'UL' %}text-red-400{% elif r.status == 'L' %}text-sky-400{% elif r.status == 'H' %}text-amber-400{% else %}text-white/70{% endif %}">●
+        {% if r.status == 'P' %}Present{% if r.late %} <span class="text-orange-400">· Late {{ r.att.late_minutes }}m</span>{% endif %}{% elif r.status == 'UL' %}Absent{% elif r.status == 'L' %}On Leave{% elif r.status == 'H' %}Holiday{% elif r.status == 'OFF' %}Off Day{% else %}Not checked in yet{% endif %}</span>
+    </div>
+    <div class="flex justify-between text-xs text-white/50 mt-2"><span>{{ r.date|date:"d M | D" }}</span><span>Total Hours: {% if r.hours is not None %}<b class="text-white">{{ r.hours }}h</b>{% else %}-- --{% endif %}</span></div>
+    <div class="grid grid-cols-2 mt-3 text-sm">
+      <div><div class="text-white/50 text-xs">Check In</div>{{ r.att.in_time|time:"h:i A"|default:"--" }}</div>
+      <div><div class="text-white/50 text-xs">Check Out</div>{{ r.att.out_time|time:"h:i A"|default:"--" }}</div>
+    </div>
+  </div>
+  {% empty %}<p class="text-white/50 text-center py-10">No data found</p>{% endfor %}
+</div>
+{% endblock %}

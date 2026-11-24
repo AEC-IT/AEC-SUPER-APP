@@ -1,0 +1,211 @@
+{% extends 'staffapp/base.html' %}
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+{% block content %}
+<!-- Header card -->
+<section class="bg-gradient-to-b from-[#6d4aff] to-[#4c2fd6] rounded-b-[32px] px-5 pt-5 pb-6">
+  <div class="flex items-center gap-3">
+    {% include 'staffapp/_avatar.html' with size='w-12 h-12' %}
+    <div class="flex-1 min-w-0">
+      <div class="text-lg font-semibold truncate">{{ me.user.first_name|default:me.user.username }}</div>
+      <div class="text-sm text-white/70 truncate">{{ me.designation|default:me.department.name }}</div>
+    </div>
+    <button id="push-enable" hidden class="text-[11px] bg-white/15 rounded-full px-3 py-1.5 mr-1">Turn on alerts</button>
+    <a href="{% url 'staffapp:feed' %}" class="relative w-11 h-11 rounded-full bg-white/15 flex items-center justify-center text-xl">🔔
+      {% if unread_notification_count %}<span class="absolute -top-0.5 -right-0.5 bg-red-500 text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">{{ unread_notification_count }}</span>{% endif %}
+    </a>
+  </div>
+  <div class="border-t border-white/15 mt-4 pt-4 space-y-3">
+    <div class="flex items-center gap-2 text-sm">
+      <span class="text-white/70">{{ shift.name|default:"General" }}</span>
+      <span class="bg-white/15 rounded-full px-3 py-1 font-semibold">
+        {% if shift %}{{ shift.start_time|time:"H:i" }} to {{ shift.end_time|time:"H:i" }}{% else %}09:30 to 17:30{% endif %}</span>
+    </div>
+    <div class="flex items-center gap-4 text-sm">
+      <span>📅 <b>{{ today|date:"d M Y" }}</b></span>
+      {% if att.in_time %}<span class="text-white/70">⏰ Last Check In <b class="text-white">{{ att.in_time|time:"h:i A" }}</b></span>{% endif %}
+    </div>
+
+    {% if state == 'out' %}
+      <div id="clock" class="text-4xl font-bold tracking-tight">--:--</div>
+      <button onclick="openSheet()" class="w-full bg-white text-[#4c2fd6] rounded-full py-4 font-semibold text-lg flex items-center justify-center gap-2">
+        <span class="text-2xl">☝️</span> Check In</button>
+    {% elif state == 'in' or state == 'break' %}
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-white/70">Duration</span>
+        <div id="timer" class="flex items-center gap-1.5 text-3xl font-bold tabular-nums" data-secs="{{ worked }}" data-running="{% if state == 'in' %}1{% endif %}">
+          <span class="bg-white/15 rounded-lg px-2 py-1">00</span>:<span class="bg-white/15 rounded-lg px-2 py-1">00</span>:<span class="bg-white/15 rounded-lg px-2 py-1">00</span>
+        </div>
+      </div>
+      {% if state == 'break' %}<div class="text-sm bg-amber-400/20 text-amber-200 rounded-xl px-3 py-2">☕ On break since {{ on_break.start|time:"h:i A" }}</div>{% endif %}
+      <div class="grid grid-cols-2 gap-3">
+        <button onclick="toggleBreak()" class="bg-white/15 rounded-full py-3.5 font-semibold">☕ {% if state == 'break' %}End Break{% else %}Start Break{% endif %}</button>
+        <button onclick="openSheet('out')" class="bg-white text-red-600 rounded-full py-3.5 font-semibold">☝️ Check Out</button>
+      </div>
+    {% else %}
+      <div class="bg-white/15 rounded-2xl p-4 flex justify-between text-sm">
+        <div><div class="text-white/60">In</div><b>{{ att.in_time|time:"h:i A" }}</b></div>
+        <div><div class="text-white/60">Out</div><b>{{ att.out_time|time:"h:i A" }}</b></div>
+        <div><div class="text-white/60">Worked</div><b id="done-hrs" data-secs="{{ worked }}"></b></div>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- Quick actions -->
+<section class="grid grid-cols-2 gap-3 px-3 mt-4">
+  <a href="{% url 'staffapp:leave_new' %}" class="card py-6 flex flex-col items-center gap-2 text-sm"><span class="text-2xl">🗓️</span>Request Leave</a>
+  <a href="{% url 'staffapp:tasks' %}?new=1" class="card py-6 flex flex-col items-center gap-2 text-sm"><span class="text-2xl">✅</span>Create Task</a>
+</section>
+
+<!-- Attendance calendar -->
+<section class="card mx-3 mt-4 p-4">
+  <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center gap-3">
+      <a href="?m={{ prev_m|date:'Y-n' }}" class="w-9 h-9 rounded-full bg-card2 flex items-center justify-center">‹</a>
+      <span class="font-semibold">{{ month|date:"M Y" }}</span>
+      <a href="?m={{ next_m|date:'Y-n' }}" class="w-9 h-9 rounded-full bg-card2 flex items-center justify-center">›</a>
+    </div>
+    <div class="flex items-center gap-2 text-[11px] text-white/60">
+      <span class="flex items-center gap-1"><i class="w-2 h-2 rounded-full bg-brand inline-block"></i>P</span>
+      <span class="flex items-center gap-1"><i class="w-2 h-2 rounded-full border border-red-400 inline-block"></i>UL</span>
+      <span class="flex items-center gap-1"><i class="w-2 h-2 rounded-full bg-white/30 inline-block"></i>OFF</span>
+      <span class="flex items-center gap-1"><i class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></i>L</span>
+    </div>
+  </div>
+  {% include 'staffapp/_calendar.html' %}
+</section>
+
+<!-- Check-in sheet -->
+<div id="sheet" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/70" onclick="closeSheet()"></div>
+  <div class="absolute inset-x-0 bottom-0 max-w-md mx-auto">
+    <div id="map" class="h-[52vh] rounded-t-3xl bg-card2"></div>
+    <button onclick="locate()" class="absolute right-4 top-4 z-[500] bg-black/80 rounded-full px-4 py-2 text-sm">⟳ Refresh</button>
+    <div class="bg-[#16161b] -mt-6 relative z-[500] rounded-t-3xl p-5 space-y-3" style="padding-bottom: calc(1.25rem + env(safe-area-inset-bottom))">
+      <div id="geo-title" class="font-semibold text-lg">📍 Finding your location…</div>
+      <div id="geo-sub" class="text-sm text-white/60">Allow location access when asked.</div>
+      <video id="cam" playsinline muted class="hidden w-28 h-28 rounded-2xl object-cover mx-auto -scale-x-100"></video>
+      <button id="punch" disabled onclick="punch()" class="btn disabled:opacity-40">Check in</button>
+      <div class="flex justify-between text-xs text-white/50"><span id="geo-time"></span><span id="geo-range"></span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Success -->
+<div id="ok" class="fixed inset-0 z-50 hidden bg-black/80 flex items-center justify-center p-8">
+  <div class="card border border-white/10 p-8 text-center w-full max-w-xs">
+    <div class="w-14 h-14 rounded-full bg-brand mx-auto flex items-center justify-center text-3xl">✓</div>
+    <div id="ok-title" class="font-semibold text-lg mt-4">Check In Successful</div>
+    <div id="ok-time" class="text-sm mt-1">⏰ --</div>
+    <div id="ok-loc" class="text-sm text-white/60 mt-1 truncate"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ locations|json_script:"locs" }}
+<script>
+const LOCS = JSON.parse(document.getElementById('locs').textContent);
+const CSRF = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '{{ csrf_token }}';
+const pad = (n) => String(n).padStart(2, '0');
+
+// Live clock
+const clock = document.getElementById('clock');
+function tick() { if (clock) clock.textContent = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase(); }
+tick(); setInterval(tick, 1000);
+
+// Duration timer (excludes breaks; server gives seconds worked so far)
+const timer = document.getElementById('timer');
+if (timer) {
+  let s = parseInt(timer.dataset.secs);
+  const draw = () => { const p = timer.querySelectorAll('span');
+    p[0].textContent = pad(Math.floor(s / 3600)); p[1].textContent = pad(Math.floor(s % 3600 / 60)); p[2].textContent = pad(s % 60); };
+  draw(); if (timer.dataset.running) setInterval(() => { s++; draw(); }, 1000);
+}
+const dh = document.getElementById('done-hrs');
+if (dh) { const s = parseInt(dh.dataset.secs); dh.textContent = Math.floor(s / 3600) + 'h ' + pad(Math.floor(s % 3600 / 60)) + 'm'; }
+
+function toggleBreak() {
+  fetch('{% url "staffapp:break" %}', { method: 'POST', headers: { 'X-CSRFToken': CSRF } })
+    .then((r) => r.json()).then((d) => d.ok ? location.reload() : alert(d.message));
+}
+
+// Haversine
+function dist(a, b, c, d) { const R = 6371000, r = Math.PI / 180, x = (c - a) * r, y = (d - b) * r;
+  const h = Math.sin(x / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin(y / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); }
+
+let action = 'in', map, me, pos, match, stream;
+function openSheet(a) {
+  action = a || 'in';
+  document.getElementById('punch').textContent = action === 'in' ? 'Check in' : 'Check out';
+  document.getElementById('sheet').classList.remove('hidden');
+  if (!map && window.L) {
+    map = L.map('map', { zoomControl: false, attributionControl: false }).setView([LOCS[0]?.lat || 9.97, LOCS[0]?.lng || 76.28], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+    LOCS.forEach((l) => L.circle([l.lat, l.lng], { radius: l.r, color: '#6d4aff', fillOpacity: .12 }).addTo(map));
+  }
+  locate();
+}
+function closeSheet() { document.getElementById('sheet').classList.add('hidden'); stopCam(); }
+
+function locate() {
+  const t = document.getElementById('geo-title'), sub = document.getElementById('geo-sub'), btn = document.getElementById('punch');
+  t.textContent = '📍 Finding your location…'; btn.disabled = true;
+  if (!navigator.geolocation) { t.textContent = 'Location not supported on this device'; return; }
+  navigator.geolocation.getCurrentPosition((p) => {
+    pos = p.coords;
+    match = null; let best = Infinity;
+    LOCS.forEach((l) => { const d = dist(pos.latitude, pos.longitude, l.lat, l.lng); if (d <= l.r && d < best) { best = d; match = l; } });
+    if (map) { map.setView([pos.latitude, pos.longitude], 17);
+      if (me) me.setLatLng([pos.latitude, pos.longitude]); else me = L.marker([pos.latitude, pos.longitude]).addTo(map); }
+    document.getElementById('geo-time').textContent = 'Last Updated: ' + new Date().toLocaleTimeString('en-IN');
+    const rng = document.getElementById('geo-range');
+    if (match) {
+      t.innerHTML = '✅ Ready to punch'; sub.textContent = 'You are within the allowed radius of ' + match.name;
+      rng.innerHTML = '<span class="text-emerald-400">●</span> In range'; btn.disabled = false;
+      if (match.selfie) startCam();
+    } else {
+      t.innerHTML = '⛔ Out of range'; sub.textContent = 'Move inside your office location and tap Refresh.';
+      rng.innerHTML = '<span class="text-red-400">●</span> Out of range';
+    }
+  }, () => { t.textContent = '⚠️ Location permission needed'; sub.textContent = 'Enable location for this app in phone settings.'; },
+  { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+}
+
+function startCam() {
+  const v = document.getElementById('cam');
+  if (stream || !navigator.mediaDevices) return;
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } }).then((s) => {
+    stream = s; v.srcObject = s; v.classList.remove('hidden'); v.play();
+    document.getElementById('geo-sub').textContent += ' · Selfie will be taken when you punch';
+  }).catch(() => { document.getElementById('geo-sub').textContent = 'Camera permission is needed for a selfie at this location.'; });
+}
+function stopCam() { if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; document.getElementById('cam').classList.add('hidden'); } }
+function selfie() {
+  const v = document.getElementById('cam'); if (!stream || !v.videoWidth) return '';
+  const c = document.createElement('canvas'); c.width = 480; c.height = 480 * v.videoHeight / v.videoWidth;
+  c.getContext('2d').drawImage(v, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.7);
+}
+
+function punch() {
+  const btn = document.getElementById('punch'); btn.disabled = true; btn.textContent = 'Please wait…';
+  const fd = new FormData();
+  fd.append('action', action); fd.append('latitude', pos.latitude.toFixed(6)); fd.append('longitude', pos.longitude.toFixed(6));
+  fd.append('face_image', selfie());
+  fetch('{% url "attendance:clock" %}', { method: 'POST', body: fd, headers: { 'X-CSRFToken': CSRF } })
+    .then((r) => r.json()).then((d) => {
+      stopCam();
+      if (!d.success) { alert(d.message); btn.disabled = false; btn.textContent = action === 'in' ? 'Check in' : 'Check out'; return; }
+      closeSheet();
+      document.getElementById('ok-title').textContent = action === 'in' ? 'Check In Successful' : 'Check Out Successful';
+      document.getElementById('ok-time').textContent = '⏰ ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
+      document.getElementById('ok-loc').textContent = '📍 ' + (match ? match.name : '');
+      document.getElementById('ok').classList.remove('hidden');
+      setTimeout(() => location.reload(), 1800);
+    }).catch(() => { alert('Network error, try again'); btn.disabled = false; });
+}
+</script>
+{% endblock %}

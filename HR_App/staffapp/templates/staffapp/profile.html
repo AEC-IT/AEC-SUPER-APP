@@ -1,0 +1,56 @@
+{% extends 'staffapp/base.html' %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+{% if not section %}
+{% include 'staffapp/_header.html' with title='My Profile' icon='👤' %}
+<div class="flex flex-col items-center py-6">
+  {% include 'staffapp/_avatar.html' with size='w-28 h-28 text-4xl' %}
+  <div class="text-xl font-semibold mt-4">{{ me.user.get_full_name|default:me.user.username }}</div>
+  <div class="text-white/60">{{ me.designation|default:me.department.name }}</div>
+</div>
+<div class="card mx-3 divide-y divide-white/5">
+  <a href="?s=personal" class="flex items-center gap-3 px-4 py-4"><span>🪪</span><span class="flex-1">Personal Info</span><span class="text-white/40">›</span></a>
+  <a href="?s=work" class="flex items-center gap-3 px-4 py-4"><span>💼</span><span class="flex-1">Work Info</span><span class="text-white/40">›</span></a>
+  <a href="?s=documents" class="flex items-center gap-3 px-4 py-4"><span>📄</span><span class="flex-1">Documents & Letters</span><span class="text-white/40">›</span></a>
+  <a href="?s=assets" class="flex items-center gap-3 px-4 py-4"><span>💻</span><span class="flex-1">Assets</span><span class="text-white/40">›</span></a>
+</div>
+<div class="card mx-3 mt-4">
+  <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+    <button class="w-full flex items-center gap-3 px-4 py-4 text-left">↪️ <span>Log Out</span></button></form>
+</div>
+{% if request.user.role != 'STAFF' %}
+<a href="{% url 'dashboard' %}" class="block text-center text-sm text-brand mt-4">Open admin view</a>
+{% endif %}
+<p class="text-center text-xs text-white/30 mt-6">AEC HR · employee app</p>
+
+{% else %}
+{% include 'staffapp/_header.html' with back='?' title=section|title %}
+<div class="card mx-3 divide-y divide-white/5 text-sm">
+  {% if section == 'personal' %}
+    <div class="flex justify-between px-4 py-3"><span class="text-white/50">Name</span><span>{{ me.user.get_full_name }}</span></div>
+    <div class="flex justify-between px-4 py-3"><span class="text-white/50">Email</span><span>{{ me.user.email|default:"—" }}</span></div>
+    <div class="flex justify-between px-4 py-3"><span class="text-white/50">Phone</span><span>{{ me.user.phone|default:"—" }}</span></div>
+    <div class="flex justify-between px-4 py-3"><span class="text-white/50">Date of birth</span><span>{{ me.user.date_of_birth|date:"d M Y"|default:"—" }}</span></div>
+    <div class="flex justify-between px-4 py-3"><span class="text-white/50">Blood group</span><span>{{ me.blood_group|default:"—" }}</span></div>
+    <div class="flex justify-between px-4 py-3"><span class="text-white/50">Emergency contact</span><span>{{ me.emergency_contact|default:"—" }}</span></div>
+    <div class="px-4 py-3"><div class="text-white/50">Address</div><div class="mt-1">{{ me.address|default:"—"|linebreaksbr }}</div></div>
+  {% elif section == 'work' %}
+    <div class="flex justify-between px-4 py-3"><span class="text-white/50">Employee ID</span><span>{{ me.employee_id|default:"—" }}</span></div>
+    <div class="flex justify-between px-4 py-3"><span class="text-white/50">Department</span><span>{{ me.department.name }}</span></div>
+    <div class="flex justify-between px-4 py-3"><span class="text-white/50">Designation</span><span>{{ me.designation|default:"—" }}</span></div>
+    <div class="flex justify-between px-4 py-3"><span class="text-white/50">Reporting to</span><span>{{ me.reporting_manager.user.get_full_name|default:"—" }}</span></div>
+    <div class="flex justify-between px-4 py-3"><span class="text-white/50">Date of joining</span><span>{{ me.date_of_joining|date:"d M Y"|default:"—" }}</span></div>
+    <div class="flex justify-between px-4 py-3"><span class="text-white/50">Status</span><span>{{ me.get_probation_status_display }}</span></div>
+  {% elif section == 'documents' %}
+    {% for d in docs %}
+    <a href="{% url 'communications:mail_detail' d.pk %}" class="block px-4 py-3"><div>{{ d.subject }}</div><div class="text-xs text-white/50">{{ d.created_at|date:"d M Y" }} · {{ d.get_mail_type_display }}</div></a>
+    {% empty %}<p class="px-4 py-8 text-center text-white/50">No documents yet</p>{% endfor %}
+  {% elif section == 'assets' %}
+    {% for a in assets %}
+    <div class="px-4 py-3"><div class="flex justify-between"><span>{{ a.label }}</span><span class="text-xs {% if a.status == 'ISSUED' %}text-emerald-400{% else %}text-white/50{% endif %}">{{ a.get_status_display }}</span></div>
+      <div class="text-xs text-white/50">{{ a.get_asset_type_display }}{% if a.serial_no %} · {{ a.serial_no }}{% endif %} · issued {{ a.issued_date|date:"d M Y" }}</div></div>
+    {% empty %}<p class="px-4 py-8 text-center text-white/50">No assets issued</p>{% endfor %}
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

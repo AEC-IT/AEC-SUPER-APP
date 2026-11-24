@@ -1,0 +1,18 @@
+{% extends 'staffapp/base.html' %}
+{% block content %}
+{% url 'staffapp:services' as back %}{% include 'staffapp/_header.html' with back=back title='My Leaves' %}
+<div class="px-3 space-y-3">
+  <a href="{% url 'staffapp:leave_new' %}" class="btn block text-center">+ Apply Leave</a>
+  {% for l in items %}
+  <div class="card p-4">
+    <div class="flex justify-between"><span class="font-medium">{{ l.get_leave_type_display }}</span>
+      <span class="text-xs px-2 py-1 rounded-full {% if l.status == 'APPROVED' %}bg-emerald-500/20 text-emerald-300{% elif l.status == 'REJECTED' %}bg-red-500/20 text-red-300{% elif l.status == 'PENDING' %}bg-amber-500/20 text-amber-300{% else %}bg-white/10 text-white/60{% endif %}">{{ l.get_status_display }}</span></div>
+    <div class="text-sm text-white/60 mt-1">{{ l.start_date|date:"d M" }}{% if l.end_date != l.start_date %} – {{ l.end_date|date:"d M Y" }}{% else %} {{ l.start_date|date:"Y" }}{% endif %}</div>
+    {% if l.reason %}<p class="text-sm text-white/50 mt-2">{{ l.reason }}</p>{% endif %}
+    {% if l.status == 'PENDING' %}
+    <form method="post" action="{% url 'leave:cancel' l.pk %}" class="mt-2">{% csrf_token %}<button class="text-xs text-red-400">Cancel request</button></form>
+    {% endif %}
+  </div>
+  {% empty %}<p class="text-white/50 text-center py-16">No leave requests yet</p>{% endfor %}
+</div>
+{% endblock %}
