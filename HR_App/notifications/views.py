@@ -120,3 +120,45 @@ class SendStaffWishView(LoginRequiredMixin, View):
             messages.error(request, "Could not find recipient profile.")
             
         return redirect('notifications:list')
+
+
+# ---------------------------------------------------------------------------
+# Web Push subscription endpoints
+# ---------------------------------------------------------------------------
+import json as _json
+from django.conf import settings as _settings
+from django.contrib.auth.decorators import login_required as _login_required
+from django.views.decorators.http import require_POST as _require_POST
+
+
+@_login_required
+def push_public_key(request):
+    return JsonResponse({'key': getattr(_settings, 'WEBPUSH_VAPID_PUBLIC_KEY', '')})
+
+
+@_login_required
+@_require_POST
+def push_subscribe(request):
+    from .models import PushSubscription
+    try:
+        data = _json.loads(request.body)
+        endpoint = data['endpoint']
+        keys = data['keys']
+    except (ValueError, KeyError):
+        return JsonResponse({'ok': False}, status=400)
+    if data.get('unsubscribe'):
+        PushSubscription.objects.filter(endpoint=endpoint, user=request.user).delete()
+        return JsonResponse({'ok': True})
+    PushSubscription.objects.update_or_create(
+        endpoint=endpoint,
+        defaults={'user': request.user, 'p256dh': keys['p256dh'], 'auth': keys['auth'],
+                  'user_agent': request.META.get('HTTP_USER_AGENT', '')[:300]})
+    return JsonResponse({'ok': True})
+
+
+@_login_required
+@_require_POST
+def push_test(request):
+    from .push import send_push
+    n = send_push([request.user], 'Test notification', 'Push notifications are working on this device 🎉')
+    return JsonResponse({'ok': n > 0, 'sent': n})

@@ -64,6 +64,13 @@
             border-radius: 10px;
         }
     </style>
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="AEC HR">
+    <link rel="apple-touch-icon" href="{% static 'pwa/icon-192.png' %}">
 </head>
 
 <body x-data="{ sidebarOpen: false }"
@@ -126,6 +133,24 @@
                     </svg>
                     Attendance Records
                 </a>
+
+                <a href="{% url 'workforce:roster' %}"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:text-blue-600 hover:bg-blue-50 transition-colors {% if 'workforce/roster' in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600{% endif %}">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    Shift Roster
+                </a>
+                <a href="{% url 'workforce:performance' %}"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:text-blue-600 hover:bg-blue-50 transition-colors {% if 'workforce/performance' in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600{% endif %}">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    Performance
+                </a>
+                {% if request.user.role == 'HR' or request.user.role == 'MD' or request.user.is_superuser %}
+                <a href="{% url 'workforce:locations' %}"
+                    class="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:text-blue-600 hover:bg-blue-50 transition-colors {% if 'workforce/locations' in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600{% endif %}">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Office Locations
+                </a>
+                {% endif %}
 
                 <a href="{% url 'leave:list' %}"
                     class="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:text-blue-600 hover:bg-blue-50 transition-colors {% if 'leave' in request.path %}bg-blue-50 text-blue-600 font-semibold{% else %}text-slate-600{% endif %}">
@@ -260,6 +285,10 @@
             </div>
 
             <div class="flex items-center gap-4">
+                <button id="push-enable-btn" type="button" data-allow-md hidden
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg">
+                    🔔 <span class="hidden sm:inline">Enable phone</span> alerts
+                </button>
                 <!-- Notification Bell with Premium Red Badge and Audio Chime -->
                 <div class="relative">
                     <a href="{% url 'notifications:list' %}" class="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors block relative" title="Notifications" id="navbar-notif-bell">
@@ -357,7 +386,7 @@
 
         <!-- Main Content Area -->
         <main
-            class="flex-1 {% if request.user.is_authenticated and request.resolver_match.url_name != 'login' and request.resolver_match.url_name != 'signup' %}p-6 lg:p-10{% endif %} w-full bg-[#f8fafc]">
+            class="flex-1 pb-24 lg:pb-0 {% if request.user.is_authenticated and request.resolver_match.url_name != 'login' and request.resolver_match.url_name != 'signup' %}p-6 lg:p-10{% endif %} w-full bg-[#f8fafc]">
             {% if messages %}
             <div class="max-w-7xl mx-auto mb-6">
                 {% for message in messages %}
@@ -375,6 +404,58 @@
             </div>
         </main>
     </div>
+
+    {% if request.user.is_authenticated and request.resolver_match.url_name != 'login' and request.resolver_match.url_name != 'signup' %}
+    <!-- Mobile bottom navigation (app-like on phones) -->
+    <nav class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-slate-200 grid grid-cols-5 text-[11px] font-medium text-slate-500"
+         style="padding-bottom: env(safe-area-inset-bottom)">
+        <a href="{% url 'dashboard' %}" class="flex flex-col items-center py-2 {% if request.resolver_match.url_name == 'dashboard' %}text-blue-600{% endif %}">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>Home</a>
+        <a href="{% url 'attendance:clock' %}" class="flex flex-col items-center py-2 {% if 'attendance/clock' in request.path %}text-blue-600{% endif %}">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Check in</a>
+        <a href="{% url 'leave:list' %}" class="flex flex-col items-center py-2 {% if '/leave/' in request.path %}text-blue-600{% endif %}">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>Leave</a>
+        <a href="{% url 'workforce:roster' %}" class="flex flex-col items-center py-2 {% if 'workforce/roster' in request.path %}text-blue-600{% endif %}">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>Roster</a>
+        <a href="{% url 'notifications:list' %}" class="relative flex flex-col items-center py-2 {% if '/notifications/' in request.path %}text-blue-600{% endif %}">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V5a2 2 0 10-4 0v.3C7.7 6.2 6 8.4 6 11v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+            {% if unread_notification_count > 0 %}<span class="absolute top-1 right-1/4 bg-red-500 text-white text-[9px] font-bold rounded-full px-1.5">{{ unread_notification_count }}</span>{% endif %}
+            Alerts</a>
+    </nav>
+
+    <script>
+    // PWA: service worker + Web Push opt-in
+    (function () {
+        if (!('serviceWorker' in navigator)) return;
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(async (reg) => {
+            const btn = document.getElementById('push-enable-btn');
+            if (!('PushManager' in window) || !btn) return;
+            const res = await fetch('{% url "notifications:push_key" %}');
+            const { key } = await res.json();
+            if (!key) return;  // server not configured for push
+            const existing = await reg.pushManager.getSubscription();
+            const csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+            const save = (sub) => fetch('{% url "notifications:push_subscribe" %}', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+                body: JSON.stringify(sub.toJSON()),
+            });
+            if (existing && Notification.permission === 'granted') { save(existing); return; }
+            if (Notification.permission === 'denied') return;
+            btn.hidden = false;
+            btn.addEventListener('click', async () => {
+                const perm = await Notification.requestPermission();
+                if (perm !== 'granted') { btn.hidden = true; return; }
+                const b64 = key.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - key.length % 4) % 4);
+                const appKey = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+                const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appKey });
+                await save(sub);
+                btn.textContent = '✅ Alerts on';
+                setTimeout(() => { btn.hidden = true; }, 2000);
+            });
+        }).catch((e) => console.warn('SW registration failed', e));
+    })();
+    </script>
+    {% endif %}
 </body>
 
 </html>

@@ -7,7 +7,8 @@ Late escalation rule (per profile, per calendar month):
   3rd late event   -> + DisciplineRecord(severity=DEDUCT_HALF_DAY, 0.5 days)
   4th+ late event  -> + DisciplineRecord(severity=DEDUCT_FULL_DAY, 1.0 days each)
 
-Cinema departments are exempt — no late flag, no discipline record.
+Cinema departments are exempt unless rostered on a shift (workforce app);
+rostered staff are measured against their shift start + grace.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -32,14 +33,20 @@ def _process_late_check(attendance_id: int) -> None:
         return
     if not att.in_time:
         return
-    if att.profile.department.is_cinema:
-        return  # Cinema exempt
+    # Rostered shift (workforce app) decides start time & grace when present.
+    from workforce.models import shift_for
+    shift = shift_for(att.profile, att.date)
+    if shift is None and att.profile.department.is_cinema:
+        return  # Cinema exempt unless they are on a roster
 
     local_in = timezone.localtime(att.in_time)
-    shift_start_local = local_in.replace(
-        hour=SHIFT_START_HOUR, minute=SHIFT_START_MIN, second=0, microsecond=0,
-    )
-    grace = timedelta(minutes=getattr(settings, 'GRACE_PERIOD_MINUTES', 15))
+    if shift:
+        start_h, start_m = shift.start_time.hour, shift.start_time.minute
+        grace = timedelta(minutes=shift.grace_minutes)
+    else:
+        start_h, start_m = SHIFT_START_HOUR, SHIFT_START_MIN
+        grace = timedelta(minutes=getattr(settings, 'GRACE_PERIOD_MINUTES', 15))
+    shift_start_local = local_in.replace(hour=start_h, minute=start_m, second=0, microsecond=0)
 
     if local_in <= (shift_start_local + grace):
         return  # Not late

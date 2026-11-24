@@ -1,0 +1,85 @@
+{% extends 'onboarding/base.html' %}
+{% block title %}Review - {{ review.profile.user.get_full_name }}{% endblock %}
+{% block page_title %}Performance Review{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+  <a href="{% url 'workforce:performance' %}" class="text-sm text-blue-600">← Back</a>
+  <div class="bg-white rounded-xl border border-slate-200 p-6">
+    <div class="flex flex-wrap justify-between gap-3">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900">{{ review.profile.user.get_full_name }}</h1>
+        <p class="text-sm text-slate-500">{{ review.profile.designation }} · {{ review.profile.department.name }} · {{ review.cycle.name }}</p>
+        <p class="text-xs text-slate-400 mt-1">Reviewer: {{ review.reviewer.user.get_full_name|default:"HR" }}</p>
+      </div>
+      <span class="h-fit text-xs px-3 py-1 rounded-full bg-blue-50 text-blue-700">{{ review.get_stage_display }}</span>
+    </div>
+
+    {% if goals %}
+    <h3 class="font-semibold text-slate-800 mt-6 mb-2">Goals {% if review.goal_score is not None %}<span class="text-sm text-slate-500">— weighted score {{ review.goal_score }}%</span>{% endif %}</h3>
+    <div class="space-y-2">
+      {% for g in goals %}
+      <div class="flex items-center gap-3 text-sm">
+        <span class="flex-1">{{ g.title }}</span>
+        <div class="w-32 h-2 bg-slate-100 rounded"><div class="h-2 bg-blue-600 rounded" style="width: {{ g.progress }}%"></div></div>
+        <span class="w-10 text-right">{{ g.progress }}%</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  {% with editable=review.stage %}
+  <!-- Self review -->
+  <form method="post" class="bg-white rounded-xl border border-slate-200 p-6 space-y-4">{% csrf_token %}
+    <h2 class="font-bold text-slate-900">Self review</h2>
+    {% if is_self and review.stage == 'SELF' %}
+      <div><label class="text-sm font-medium text-slate-700">Overall self rating</label>
+        <div class="flex gap-2 mt-1">{% for i in ratings %}
+          <label class="cursor-pointer"><input type="radio" name="self_rating" value="{{ i }}" class="peer sr-only" {% if review.self_rating == i %}checked{% endif %}>
+            <span class="block w-10 h-10 rounded-lg border border-slate-300 text-center leading-10 peer-checked:bg-blue-600 peer-checked:text-white">{{ i }}</span></label>{% endfor %}
+        </div></div>
+      <textarea name="achievements" rows="4" placeholder="Key achievements this period" class="w-full px-3 py-2 border border-slate-300 rounded-lg">{{ review.achievements }}</textarea>
+      <textarea name="self_comments" rows="3" placeholder="Challenges, support needed, career goals" class="w-full px-3 py-2 border border-slate-300 rounded-lg">{{ review.self_comments }}</textarea>
+      <div class="flex gap-3">
+        <button class="px-4 py-2 border border-slate-300 rounded-lg">Save draft</button>
+        <button name="submit" value="1" onclick="return confirm('Submit to your manager? You cannot edit after this.')" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Submit</button>
+      </div>
+    {% else %}
+      <p class="text-sm"><b>Rating:</b> {{ review.self_rating|default:"—" }} / 5</p>
+      <p class="text-sm whitespace-pre-line"><b>Achievements:</b> {{ review.achievements|default:"—" }}</p>
+      <p class="text-sm whitespace-pre-line"><b>Comments:</b> {{ review.self_comments|default:"—" }}</p>
+    {% endif %}
+  </form>
+
+  <!-- Manager review -->
+  {% if show_manager %}
+  <form method="post" class="bg-white rounded-xl border border-slate-200 p-6 space-y-4">{% csrf_token %}
+    <h2 class="font-bold text-slate-900">Manager review</h2>
+    {% if is_reviewer and review.stage == 'MANAGER' %}
+      <div><label class="text-sm font-medium text-slate-700">Final rating</label>
+        <div class="flex gap-2 mt-1">{% for i in ratings %}
+          <label class="cursor-pointer"><input type="radio" name="manager_rating" value="{{ i }}" class="peer sr-only" {% if review.manager_rating == i %}checked{% endif %}>
+            <span class="block w-10 h-10 rounded-lg border border-slate-300 text-center leading-10 peer-checked:bg-emerald-600 peer-checked:text-white">{{ i }}</span></label>{% endfor %}
+        </div></div>
+      <textarea name="strengths" rows="3" placeholder="Strengths" class="w-full px-3 py-2 border border-slate-300 rounded-lg">{{ review.strengths }}</textarea>
+      <textarea name="improvements" rows="3" placeholder="Areas to improve" class="w-full px-3 py-2 border border-slate-300 rounded-lg">{{ review.improvements }}</textarea>
+      <textarea name="manager_comments" rows="3" placeholder="Overall comments" class="w-full px-3 py-2 border border-slate-300 rounded-lg">{{ review.manager_comments }}</textarea>
+      <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="recommend_promotion" {% if review.recommend_promotion %}checked{% endif %}> Recommend for promotion</label>
+      <div class="flex gap-3">
+        <button class="px-4 py-2 border border-slate-300 rounded-lg">Save draft</button>
+        <button name="submit" value="1" onclick="return confirm('Complete this review? The employee will be notified.')" class="px-4 py-2 bg-emerald-600 text-white rounded-lg">Complete review</button>
+      </div>
+    {% elif review.stage == 'SELF' %}
+      <p class="text-sm text-slate-500">Waiting for the employee to submit their self review.</p>
+    {% else %}
+      <p class="text-sm"><b>Rating:</b> {{ review.manager_rating|default:"—" }} / 5 {% if review.recommend_promotion %}· ⭐ Recommended for promotion{% endif %}</p>
+      <p class="text-sm whitespace-pre-line"><b>Strengths:</b> {{ review.strengths|default:"—" }}</p>
+      <p class="text-sm whitespace-pre-line"><b>To improve:</b> {{ review.improvements|default:"—" }}</p>
+      <p class="text-sm whitespace-pre-line"><b>Comments:</b> {{ review.manager_comments|default:"—" }}</p>
+    {% endif %}
+  </form>
+  {% endif %}
+  {% endwith %}
+</div>
+{% endblock %}

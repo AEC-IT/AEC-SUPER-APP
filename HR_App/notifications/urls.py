@@ -10,4 +10,7 @@ urlpatterns = [
     path('mark-all-read/', views.MarkAllReadView.as_view(), name='mark_all_read'),
     path('delete/<int:pk>/', views.DeleteNotificationView.as_view(), name='delete'),
     path('send-wish/<int:notif_id>/', views.SendStaffWishView.as_view(), name='send_wish'),
+    path('push/key/', views.push_public_key, name='push_key'),
+    path('push/subscribe/', views.push_subscribe, name='push_subscribe'),
+    path('push/test/', views.push_test, name='push_test'),
 ]

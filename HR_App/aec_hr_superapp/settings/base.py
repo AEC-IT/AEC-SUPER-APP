@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'assets',
     'communications',
     'notifications',
+    'workforce',
 ]
 
 MIGRATION_MODULES = {
@@ -206,3 +207,9 @@ else:
     }
 
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
+
+# Web Push (PWA notifications) — generate keys with: python manage.py vapid_keys
+WEBPUSH_VAPID_PUBLIC_KEY = config('WEBPUSH_VAPID_PUBLIC_KEY', default='')
+WEBPUSH_VAPID_PRIVATE_KEY = config('WEBPUSH_VAPID_PRIVATE_KEY', default='')
+WEBPUSH_CONTACT = config('WEBPUSH_CONTACT', default='mailto:hr@aecgroup.in')
