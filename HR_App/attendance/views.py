@@ -12,6 +12,15 @@ from django.core.files.base import ContentFile
 from core.models import Attendance, EmployeeProfile, User
 from .utils import haversine_distance
 
+# Used only until HR configures locations in /workforce/locations/
+LEGACY_LOCATIONS = [
+    (9.967283003625232, 76.28662859325976),
+    (9.498526389705322, 76.34305504232113),
+    (9.506290068630923, 76.34089742310876),
+    (9.506567290951638, 76.34080264948254),
+]
+
+
 class ClockInOutView(LoginRequiredMixin, View):
     def get(self, request):
         try:
@@ -49,33 +58,36 @@ class ClockInOutView(LoginRequiredMixin, View):
         is_valid = True
         location_name = "AEC Group"
         
-        AUTHORIZED_LOCATIONS = [
-            {"name": "AEC Group", "lat": 9.967283003625232, "lon": 76.28662859325976},
-            {"name": "AEC Group", "lat": 9.967283003625232, "lon": 76.28662859325976},
-            {"name": "AEC Group", "lat": 9.967283003625232, "lon": 76.28662859325976},
-            {"name": "AEC Group", "lat": 9.498526389705322, "lon": 76.34305504232113},
-            {"name": "AEC Group", "lat": 9.506290068630923, "lon": 76.34089742310876},
-            {"name": "AEC Group", "lat": 9.506567290951638, "lon": 76.34080264948254},
-        ]
-        
+        # Geofences are managed by HR at /workforce/locations/.
+        # Fallback list keeps old behaviour until HR adds locations.
+        from workforce.models import OfficeLocation
+        from django.db.models import Q
+        locs = list(OfficeLocation.objects.filter(is_active=True).filter(
+            Q(departments__isnull=True) | Q(departments=dept)).distinct())
+        if not locs and not OfficeLocation.objects.exists():
+            locs = [OfficeLocation(name="AEC Group", latitude=la, longitude=lo, radius_m=250, require_selfie=False)
+                    for la, lo in LEGACY_LOCATIONS]
+        matched_loc = None
+
         if lat and lon:
-            from .utils import haversine_distance
-            min_dist = float('inf')
-            closest_loc_name = None
-            
-            for loc in AUTHORIZED_LOCATIONS:
-                d_dist = haversine_distance(float(lat), float(lon), loc['lat'], loc['lon'])
-                if d_dist < min_dist:
-                    min_dist = d_dist
-                    closest_loc_name = loc['name']
-                    
-            if min_dist <= 250:
+            best = None
+            for loc in locs:
+                d_dist = haversine_distance(float(lat), float(lon), float(loc.latitude), float(loc.longitude))
+                if d_dist <= loc.radius_m and (best is None or d_dist < best[0]):
+                    best = (d_dist, loc)
+            if best:
                 is_valid = True
-                location_name = closest_loc_name
+                matched_loc = best[1]
+                location_name = matched_loc.name
             else:
                 return JsonResponse({
-                    'success': False, 
-                    'message': 'You are not within the 250-meter radius of an authorized location. Please ensure you are on-site to Clock In/Out.'
+                    'success': False,
+                    'message': 'You are not inside an authorized office location. Please be on-site to Clock In/Out.'
+                }, status=400)
+            if matched_loc.require_selfie and not face_b64:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'A selfie is required at this location. Please allow camera access and try again.'
                 }, status=400)
         else:
             # No GPS (desktop / laptop) → check IP whitelist
@@ -133,13 +145,22 @@ class ClockInOutView(LoginRequiredMixin, View):
         if action == 'in':
             if not attendance.in_time:
                 attendance.in_time = timezone.now()
-                # Late-coming logic: Shift start at 9:30 AM. 15 mins grace (up to 9:45 AM is not late)
-                if not dept.is_cinema:
+                # Late-coming: use the employee's rostered shift if any,
+                # otherwise the default 9:30 AM office start with 15 min grace.
+                from workforce.models import shift_for
+                from datetime import timedelta
+                shift = shift_for(profile, today)
+                if shift or not dept.is_cinema:
                     local_in = timezone.localtime(attendance.in_time)
-                    shift_start_local = local_in.replace(hour=9, minute=30, second=0, microsecond=0)
-                    from datetime import timedelta
-                    grace = timedelta(minutes=15)
-                    
+                    if shift:
+                        start_t, grace = shift.start_time, timedelta(minutes=shift.grace_minutes)
+                    else:
+                        from datetime import time as _time
+                        start_t, grace = _time(9, 30), timedelta(minutes=15)
+                    shift_start_local = local_in.replace(hour=start_t.hour, minute=start_t.minute,
+                                                         second=0, microsecond=0)
+                    local_time = local_in
+
                     if local_in > (shift_start_local + grace):
                         attendance.is_late = True
                         late_diff = local_in - shift_start_local
@@ -147,7 +168,7 @@ class ClockInOutView(LoginRequiredMixin, View):
                     else:
                         attendance.is_late = False
                         attendance.late_minutes = 0
-                    
+
                     # Count occurrences
                     late_count = Attendance.objects.filter(
                         profile=profile,
@@ -156,7 +177,7 @@ class ClockInOutView(LoginRequiredMixin, View):
                         is_late=True
                     ).count()
                     
-                    if late_count == 1:  # This will be the 2nd occurrence once saved
+                    if attendance.is_late and late_count == 1:  # 2nd late this month
                         try:
                             from twofa.emails import send_html_mail
                             send_html_mail(

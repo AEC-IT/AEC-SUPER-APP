@@ -1,0 +1,72 @@
+{% extends 'onboarding/base.html' %}
+{% block title %}Office Locations - AEC HR{% endblock %}
+{% block page_title %}Office Locations{% endblock %}
+
+{% block content %}
+<div class="grid lg:grid-cols-3 gap-6">
+  <form method="post" class="bg-white rounded-xl border border-slate-200 p-6 space-y-4 h-fit">
+    {% csrf_token %}<input type="hidden" name="action" value="add">
+    <div>
+      <h2 class="font-bold text-slate-900">Add check-in location</h2>
+      <p class="text-xs text-slate-500 mt-1">Staff can only clock in/out inside one of these circles.</p>
+    </div>
+    <input name="name" required placeholder="e.g. AEC Cinemas – Kottayam" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+    <div class="grid grid-cols-2 gap-3">
+      <input name="latitude" id="lat" required placeholder="Latitude" class="px-3 py-2 border border-slate-300 rounded-lg">
+      <input name="longitude" id="lng" required placeholder="Longitude" class="px-3 py-2 border border-slate-300 rounded-lg">
+    </div>
+    <button type="button" onclick="useHere(this)" class="text-sm text-blue-600 font-medium">📍 Use my current location</button>
+    <label class="block text-sm text-slate-700">Radius (metres)
+      <input name="radius_m" type="number" min="25" max="5000" value="250" class="mt-1 w-full px-3 py-2 border border-slate-300 rounded-lg">
+    </label>
+    <label class="block text-sm text-slate-700">Departments <span class="text-slate-400">(none = all)</span>
+      <select name="departments" multiple class="mt-1 w-full px-3 py-2 border border-slate-300 rounded-lg h-28">
+        {% for d in departments %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="flex items-center gap-2 text-sm text-slate-700">
+      <input type="checkbox" name="require_selfie" checked> Require selfie at check-in
+    </label>
+    <button class="w-full py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Add location</button>
+  </form>
+
+  <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
+        <tr><th class="text-left p-3">Location</th><th class="text-left p-3">Radius</th><th class="text-left p-3">Departments</th><th class="p-3">Selfie</th><th class="p-3"></th></tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+      {% for l in locations %}
+        <tr class="{% if not l.is_active %}opacity-50{% endif %}">
+          <td class="p-3"><div class="font-medium text-slate-900">{{ l.name }}</div>
+            <a target="_blank" rel="noopener" class="text-xs text-blue-600" href="https://maps.google.com/?q={{ l.latitude }},{{ l.longitude }}">{{ l.latitude }}, {{ l.longitude }}</a></td>
+          <td class="p-3">{{ l.radius_m }} m</td>
+          <td class="p-3 text-slate-600">{% for d in l.departments.all %}{{ d.name }}{% if not forloop.last %}, {% endif %}{% empty %}All{% endfor %}</td>
+          <td class="p-3 text-center">{% if l.require_selfie %}✅{% else %}—{% endif %}</td>
+          <td class="p-3 text-right whitespace-nowrap">
+            <form method="post" class="inline">{% csrf_token %}<input type="hidden" name="pk" value="{{ l.pk }}">
+              <button name="action" value="toggle" class="text-xs px-2 py-1 rounded border border-slate-200">{% if l.is_active %}Disable{% else %}Enable{% endif %}</button>
+              <button name="action" value="delete" onclick="return confirm('Delete this location?')" class="text-xs px-2 py-1 rounded text-red-600">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="p-8 text-center text-slate-500">No locations yet. Until you add one, the built-in AEC office coordinates are used.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+function useHere(btn) {
+  if (!navigator.geolocation) return alert('Location not available on this device');
+  btn.textContent = 'Locating…';
+  navigator.geolocation.getCurrentPosition((p) => {
+    document.getElementById('lat').value = p.coords.latitude.toFixed(6);
+    document.getElementById('lng').value = p.coords.longitude.toFixed(6);
+    btn.textContent = '📍 Location filled (±' + Math.round(p.coords.accuracy) + ' m)';
+  }, () => { btn.textContent = '📍 Use my current location'; alert('Could not get location'); },
+  { enableHighAccuracy: true });
+}
+</script>
+{% endblock %}

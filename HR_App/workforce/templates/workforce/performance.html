@@ -1,0 +1,126 @@
+{% extends 'onboarding/base.html' %}
+{% block title %}Performance - AEC HR{% endblock %}
+{% block page_title %}Performance{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  {% if is_admin %}
+  <!-- HR / MD: review cycles -->
+  <div class="bg-white rounded-xl border border-slate-200 p-6">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <h2 class="font-bold text-slate-900">Appraisal cycles</h2>
+        {% if open_cycle %}
+        <p class="text-sm text-slate-500 mt-1">Open: <b>{{ open_cycle.name }}</b> ({{ open_cycle.start_date|date:"d M" }} – {{ open_cycle.end_date|date:"d M Y" }})</p>
+        {% else %}<p class="text-sm text-slate-500 mt-1">No open cycle. Start one to invite every active employee to self-review.</p>{% endif %}
+      </div>
+      {% if open_cycle %}
+      <form method="post">{% csrf_token %}<input type="hidden" name="pk" value="{{ open_cycle.pk }}">
+        <button name="action" value="close_cycle" onclick="return confirm('Close this cycle?')" class="text-sm px-3 py-2 border border-slate-200 rounded-lg">Close cycle</button></form>
+      {% endif %}
+    </div>
+
+    {% if open_cycle %}
+    <div class="grid grid-cols-3 gap-3 mt-5">
+      <div class="rounded-lg bg-amber-50 p-4"><div class="text-2xl font-bold text-amber-700">{{ stage_counts.SELF }}</div><div class="text-xs text-amber-700">Self review pending</div></div>
+      <div class="rounded-lg bg-blue-50 p-4"><div class="text-2xl font-bold text-blue-700">{{ stage_counts.MANAGER }}</div><div class="text-xs text-blue-700">Manager review pending</div></div>
+      <div class="rounded-lg bg-emerald-50 p-4"><div class="text-2xl font-bold text-emerald-700">{{ stage_counts.DONE }}</div><div class="text-xs text-emerald-700">Completed</div></div>
+    </div>
+    <div class="mt-5 overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="text-xs text-slate-500 uppercase bg-slate-50"><tr><th class="text-left p-2">Employee</th><th class="text-left p-2">Reviewer</th><th class="p-2">Stage</th><th class="p-2">Self</th><th class="p-2">Manager</th><th class="p-2">Goals</th><th></th></tr></thead>
+        <tbody class="divide-y divide-slate-100">
+        {% for r in all_reviews %}
+          <tr><td class="p-2">{{ r.profile.user.get_full_name }}</td>
+            <td class="p-2 text-slate-500">{{ r.reviewer.user.get_full_name|default:"HR" }}</td>
+            <td class="p-2 text-center text-xs">{{ r.get_stage_display }}</td>
+            <td class="p-2 text-center">{{ r.self_rating|default:"—" }}</td>
+            <td class="p-2 text-center font-semibold">{{ r.manager_rating|default:"—" }}{% if r.recommend_promotion %} ⭐{% endif %}</td>
+            <td class="p-2 text-center">{% if r.goal_score is not None %}{{ r.goal_score }}%{% else %}—{% endif %}</td>
+            <td class="p-2 text-right"><a href="{% url 'workforce:review' r.pk %}" class="text-blue-600 text-xs">Open</a></td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <form method="post" class="grid sm:grid-cols-4 gap-3 mt-5">{% csrf_token %}<input type="hidden" name="action" value="create_cycle">
+      <input name="name" required placeholder="e.g. H2 2026 Appraisal" class="sm:col-span-4 px-3 py-2 border border-slate-300 rounded-lg">
+      <label class="text-xs text-slate-600">Period start<input type="date" name="start_date" required class="mt-1 w-full px-3 py-2 border border-slate-300 rounded-lg"></label>
+      <label class="text-xs text-slate-600">Period end<input type="date" name="end_date" required class="mt-1 w-full px-3 py-2 border border-slate-300 rounded-lg"></label>
+      <label class="text-xs text-slate-600">Self review due<input type="date" name="self_review_due" class="mt-1 w-full px-3 py-2 border border-slate-300 rounded-lg"></label>
+      <button class="self-end py-2.5 bg-blue-600 text-white rounded-lg">Start cycle</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if me %}
+  <div class="grid lg:grid-cols-3 gap-6">
+    <!-- My goals -->
+    <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-6">
+      <h2 class="font-bold text-slate-900 mb-4">My goals</h2>
+      <div class="space-y-3">
+        {% for g in my_goals %}
+        <form method="post" action="{% url 'workforce:goal_save' %}" class="border border-slate-200 rounded-lg p-4">{% csrf_token %}
+          <input type="hidden" name="pk" value="{{ g.pk }}">
+          <div class="flex items-start justify-between gap-3">
+            <div><div class="font-medium text-slate-900">{{ g.title }}</div>
+              <div class="text-xs text-slate-500">{% if g.due_date %}Due {{ g.due_date|date:"d M Y" }} · {% endif %}Weight {{ g.weight }}</div></div>
+            <span class="text-xs px-2 py-1 rounded-full {% if g.status == 'DONE' %}bg-emerald-100 text-emerald-700{% elif g.status == 'AT_RISK' %}bg-red-100 text-red-700{% else %}bg-slate-100 text-slate-600{% endif %}">{{ g.get_status_display }}</span>
+          </div>
+          {% if g.description %}<p class="text-sm text-slate-600 mt-2">{{ g.description }}</p>{% endif %}
+          <div class="flex flex-wrap items-center gap-3 mt-3">
+            <input type="range" name="progress" min="0" max="100" step="5" value="{{ g.progress }}" class="flex-1 min-w-[140px]" oninput="this.nextElementSibling.textContent=this.value+'%'">
+            <span class="text-sm font-semibold w-10">{{ g.progress }}%</span>
+            <select name="status" class="text-sm px-2 py-1 border border-slate-300 rounded">
+              <option value="NOT_STARTED" {% if g.status == 'NOT_STARTED' %}selected{% endif %}>Not started</option>
+              <option value="ON_TRACK" {% if g.status == 'ON_TRACK' %}selected{% endif %}>On track</option>
+              <option value="AT_RISK" {% if g.status == 'AT_RISK' %}selected{% endif %}>At risk</option>
+              <option value="DONE" {% if g.status == 'DONE' %}selected{% endif %}>Completed</option>
+            </select>
+            <button class="text-sm px-3 py-1 bg-blue-600 text-white rounded">Update</button>
+            <button name="delete" value="1" onclick="return confirm('Delete goal?')" class="text-sm text-red-600">Delete</button>
+          </div>
+        </form>
+        {% empty %}<p class="text-sm text-slate-500">No goals yet. Add your first goal.</p>{% endfor %}
+      </div>
+      <form method="post" action="{% url 'workforce:goal_save' %}" class="mt-4 grid sm:grid-cols-6 gap-2">{% csrf_token %}
+        <input name="title" required placeholder="New goal" class="sm:col-span-3 px-3 py-2 border border-slate-300 rounded-lg">
+        <input type="date" name="due_date" class="sm:col-span-2 px-3 py-2 border border-slate-300 rounded-lg">
+        <input type="number" name="weight" min="1" max="10" value="1" title="Weight" class="px-3 py-2 border border-slate-300 rounded-lg">
+        <textarea name="description" rows="2" placeholder="How will success be measured?" class="sm:col-span-6 px-3 py-2 border border-slate-300 rounded-lg"></textarea>
+        <button class="sm:col-span-6 py-2 bg-slate-900 text-white rounded-lg">Add goal</button>
+      </form>
+    </div>
+
+    <div class="space-y-6">
+      <!-- My review -->
+      <div class="bg-white rounded-xl border border-slate-200 p-6">
+        <h2 class="font-bold text-slate-900 mb-2">My appraisal</h2>
+        {% if my_review %}
+          <p class="text-sm text-slate-600">{{ my_review.cycle.name }}</p>
+          <p class="text-sm mt-1"><span class="px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-700">{{ my_review.get_stage_display }}</span></p>
+          <a href="{% url 'workforce:review' my_review.pk %}" class="mt-4 block text-center py-2 bg-blue-600 text-white rounded-lg">{% if my_review.stage == 'SELF' %}Write self review{% else %}View{% endif %}</a>
+        {% else %}<p class="text-sm text-slate-500">No appraisal open right now.</p>{% endif %}
+      </div>
+
+      <!-- Reviews I need to give -->
+      {% if to_review %}
+      <div class="bg-white rounded-xl border border-slate-200 p-6">
+        <h2 class="font-bold text-slate-900 mb-3">Team reviews</h2>
+        <div class="divide-y divide-slate-100">
+          {% for r in to_review %}
+          <a href="{% url 'workforce:review' r.pk %}" class="flex items-center justify-between py-2 text-sm">
+            <span>{{ r.profile.user.get_full_name }}<span class="block text-xs text-slate-400">{{ r.cycle.name }}</span></span>
+            <span class="text-xs {% if r.stage == 'MANAGER' %}text-blue-700 font-semibold{% else %}text-slate-400{% endif %}">{{ r.get_stage_display }}</span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

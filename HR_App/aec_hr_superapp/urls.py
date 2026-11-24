@@ -8,6 +8,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.shortcuts import redirect, render
 from django.contrib.auth import views as auth_views
+from django.views.generic import TemplateView
 from core.views import setup_owner, signup, reimbursements_view, tasks_view
 
 @login_required
@@ -167,6 +168,13 @@ urlpatterns = [
     path('assets/', include('assets.urls')),
     path('communications/', include('communications.urls')),
     path('notifications/', include('notifications.urls')),
+    path('workforce/', include('workforce.urls')),
+
+    # PWA: manifest + service worker must be served from the site root (scope '/')
+    path('manifest.webmanifest', TemplateView.as_view(template_name='pwa/manifest.webmanifest',
+         content_type='application/manifest+json'), name='pwa_manifest'),
+    path('sw.js', TemplateView.as_view(template_name='pwa/sw.js', content_type='application/javascript'),
+         name='pwa_sw'),
 ]
 
 # Serve media files in all environments (including production when DEBUG=False)
